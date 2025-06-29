@@ -667,6 +667,24 @@ impl GitHubAPI {
         // Add existing options
         if let Some(existing_options) = &current_field.options {
             for option in existing_options {
+                // Skip if this is the option we're trying to add (avoid duplicates)
+                if option.name == option_name {
+                    continue;
+                }
+
+                // For Status field, insert QA Review before Done
+                if current_field.name == "Status"
+                    && option.name == "Done"
+                    && option_name == "QA Review"
+                {
+                    // Insert QA Review before Done
+                    all_options.push(serde_json::json!({
+                        "name": option_name,
+                        "color": color,
+                        "description": format!("{option_name} option")
+                    }));
+                }
+
                 all_options.push(serde_json::json!({
                     "name": option.name,
                     "color": option.color,
@@ -675,12 +693,18 @@ impl GitHubAPI {
             }
         }
 
-        // Add new option
-        all_options.push(serde_json::json!({
-            "name": option_name,
-            "color": color,
-            "description": format!("{option_name} option")
-        }));
+        // Add new option at the end only if it wasn't already inserted
+        let was_inserted = all_options
+            .iter()
+            .any(|opt| opt["name"].as_str() == Some(option_name));
+
+        if !was_inserted {
+            all_options.push(serde_json::json!({
+                "name": option_name,
+                "color": color,
+                "description": format!("{option_name} option")
+            }));
+        }
 
         let mutation = r"
             mutation($fieldId: ID!, $options: [ProjectV2SingleSelectFieldOptionInput!]!) {

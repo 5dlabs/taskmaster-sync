@@ -170,6 +170,17 @@ src/
 
 ## Development Workflow
 
+### Testing Philosophy
+
+**IMPORTANT: Always complete regression testing and manual testing before marking any feature as complete.**
+
+Before declaring a feature done:
+1. **Unit Tests**: Ensure all unit tests pass
+2. **Integration Tests**: Run relevant integration tests
+3. **Manual Testing**: Test the feature manually with real data
+4. **Regression Testing**: Verify existing functionality still works
+5. **Edge Cases**: Test error conditions and edge cases
+
 ### Testing Commands
 
 ```bash

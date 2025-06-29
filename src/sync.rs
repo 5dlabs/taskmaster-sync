@@ -33,6 +33,7 @@ pub struct SyncEngine {
     project: Option<Project>,
     project_mapping: Option<crate::models::config::ProjectMapping>,
     subtask_config: SubtaskConfig,
+    pub tag: String,
 }
 
 /// Sync operation options
@@ -121,6 +122,7 @@ impl SyncEngine {
             project: Some(project),
             project_mapping,
             subtask_config: SubtaskHandler::default_config(),
+            tag: tag.to_string(),
         })
     }
 

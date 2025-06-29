@@ -155,10 +155,64 @@ async fn main() -> Result<()> {
             project,
             debounce,
         } => {
-            let _ = (tag, project); // Ignore unused for now
-            tracing::info!("Watching for changes with {}ms debounce", debounce);
-            // TODO: Implement watch command
-            println!("Watch command not yet implemented");
+            tracing::info!(
+                "Starting watch mode for tag '{}' to project '{}'",
+                tag,
+                project
+            );
+
+            // Initialize sync engine
+            let config_path = ".taskmaster/sync-config.json";
+            let sync_engine = match task_master_sync::sync::SyncEngine::new(
+                config_path,
+                &tag,
+                project.parse().unwrap_or(0),
+            )
+            .await
+            {
+                Ok(engine) => engine,
+                Err(e) => {
+                    eprintln!("Failed to initialize sync engine: {e}");
+                    std::process::exit(1);
+                }
+            };
+
+            // Wrap in Arc<Mutex> for sharing
+            let sync_engine = std::sync::Arc::new(tokio::sync::Mutex::new(sync_engine));
+
+            // Create and start watcher
+            let mut watcher = match task_master_sync::watcher::TaskWatcher::new(
+                ".",
+                sync_engine,
+                std::time::Duration::from_millis(debounce),
+            ) {
+                Ok(w) => w,
+                Err(e) => {
+                    eprintln!("Failed to create file watcher: {e}");
+                    std::process::exit(1);
+                }
+            };
+
+            if let Err(e) = watcher.start() {
+                eprintln!("Failed to start file watcher: {e}");
+                std::process::exit(1);
+            }
+
+            println!("🔍 Watching for changes in .taskmaster/tasks/tasks.json");
+            println!("   Debounce: {debounce}ms");
+            println!("   Tag: {tag}");
+            println!("   Project: {project}");
+            println!("\n   Press Ctrl+C to stop watching...\n");
+
+            // Keep the program running
+            tokio::signal::ctrl_c()
+                .await
+                .expect("Failed to listen for Ctrl+C");
+
+            println!("\n⏹️  Stopping file watcher...");
+            if let Err(e) = watcher.stop() {
+                eprintln!("Error stopping watcher: {e}");
+            }
         }
         Commands::Status { project } => {
             let _ = project; // Ignore unused for now

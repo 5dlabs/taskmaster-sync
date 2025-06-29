@@ -1,0 +1,23 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "test-single-task",
+        "title": "Test Single Task",
+        "description": "Simple test task to debug TM_ID issue",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [],
+        "details": null,
+        "testStrategy": null,
+        "subtasks": [],
+        "assignee": null
+      }
+    ],
+    "metadata": {
+      "created": "2025-06-29T00:00:00Z",
+      "updated": "2025-06-29T00:00:00Z",
+      "description": "Single task for debugging"
+    }
+  }
+}

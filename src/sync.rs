@@ -7,10 +7,11 @@
 //! - Two-way sync logic
 
 use crate::config::ConfigManager;
+use crate::delta::{DeltaSyncEngine, TaskChange};
 use crate::error::{Result, TaskMasterError};
 use crate::fields::FieldManager;
 use crate::github::{CreateItemResult, GitHubAPI};
-use crate::models::github::{FieldValueContent, GitHubProjectItem, Project, ProjectItem};
+use crate::models::github::{FieldValueContent, Project, ProjectItem};
 use crate::models::task::Task;
 use crate::progress::{ProgressTracker, SyncStats};
 use crate::state::StateTracker;
@@ -42,6 +43,7 @@ pub struct SyncOptions {
     pub direction: SyncDirection,
     pub batch_size: usize,
     pub include_archived: bool,
+    pub use_delta_sync: bool,
 }
 
 /// Sync direction
@@ -125,13 +127,13 @@ impl SyncEngine {
     /// Performs a full synchronization
     pub async fn sync(&mut self, tag: &str, options: SyncOptions) -> Result<SyncResult> {
         // Validate setup
-        self.validate_sync_setup().await?;
+        self.validate_sync_setup()?;
 
         // Run appropriate sync based on direction
         match options.direction {
             SyncDirection::ToGitHub => self.sync_to_github(tag, &options).await,
-            SyncDirection::FromGitHub => self.sync_from_github(tag, &options).await,
-            SyncDirection::Bidirectional => self.sync_bidirectional(tag, &options).await,
+            SyncDirection::FromGitHub => self.sync_from_github(tag, &options),
+            SyncDirection::Bidirectional => self.sync_bidirectional(tag, &options),
         }
     }
 
@@ -146,6 +148,7 @@ impl SyncEngine {
         let tasks = all_tasks.get(tag).ok_or_else(|| {
             TaskMasterError::InvalidTaskFormat(format!("Tag '{}' not found", tag))
         })?;
+        let tasks_clone = tasks.clone(); // Clone for later use
 
         // Sync custom fields to GitHub
         self.fields
@@ -161,11 +164,19 @@ impl SyncEngine {
 
         // Build TM_ID to GitHub item mapping
         let mut tm_id_to_github: HashMap<String, ProjectItem> = HashMap::new();
+        let mut title_to_github: HashMap<String, Vec<ProjectItem>> = HashMap::new();
+
         for item in github_items {
             // Extract TM_ID from field values
             if let Some(tm_id) = self.extract_tm_id(&item) {
-                tm_id_to_github.insert(tm_id, item);
+                tm_id_to_github.insert(tm_id, item.clone());
             }
+
+            // Also track by title for duplicate detection
+            title_to_github
+                .entry(item.title.clone())
+                .or_insert_with(Vec::new)
+                .push(item);
         }
 
         // Track sync statistics
@@ -175,11 +186,71 @@ impl SyncEngine {
         let mut skipped = 0;
         let mut errors = Vec::new();
 
+        // Determine which tasks to process based on sync mode
+        let tasks_to_process: Vec<&Task> = if options.use_delta_sync && !options.force {
+            // Use delta sync for performance
+            let delta_engine = DeltaSyncEngine::new(tag);
+
+            // Convert TaggedTasks to Vec<Task> format for delta engine
+            let tasks_map: HashMap<String, Vec<Task>> = all_tasks
+                .iter()
+                .map(|(tag, tagged_tasks)| (tag.clone(), tagged_tasks.tasks.clone()))
+                .collect();
+
+            let change_set = delta_engine.detect_changes(&tasks_map, tag).await?;
+
+            tracing::info!(
+                "Delta sync detected {} changes out of {} total tasks",
+                change_set.changes.len(),
+                tasks_clone.tasks.len()
+            );
+
+            // Convert changes to task references
+            let mut tasks_to_sync = Vec::new();
+            for change in &change_set.changes {
+                match change {
+                    TaskChange::Added(task) | TaskChange::Modified(_, task) => {
+                        if let Some(task_ref) = tasks_clone.tasks.iter().find(|t| t.id == task.id) {
+                            tasks_to_sync.push(task_ref);
+                        }
+                    }
+                    TaskChange::Removed(task) => {
+                        // Handle removal separately
+                        if let Some(github_item) = tm_id_to_github.get(&task.id) {
+                            if !options.dry_run {
+                                if let Err(e) = self
+                                    .github
+                                    .delete_project_item(&project_id, &github_item.id)
+                                    .await
+                                {
+                                    errors.push(format!(
+                                        "Failed to delete removed task {}: {}",
+                                        task.id, e
+                                    ));
+                                } else {
+                                    deleted += 1;
+                                    self.state.remove_task(&task.id).await?;
+                                }
+                            } else {
+                                println!("DRY RUN: Would delete removed task {}", task.id);
+                                deleted += 1;
+                            }
+                        }
+                    }
+                }
+            }
+            tasks_to_sync
+        } else {
+            // Full sync - process all tasks
+            tracing::info!("Performing full sync of {} tasks", tasks_clone.tasks.len());
+            tasks_clone.tasks.iter().collect()
+        };
+
         // Create progress tracker
-        let progress = ProgressTracker::new(tasks.tasks.len());
+        let progress = ProgressTracker::new(tasks_to_process.len());
 
         // Process tasks in batches
-        for task in &tasks.tasks {
+        for task in &tasks_to_process {
             progress.update_main(
                 created + updated + skipped,
                 &format!("Processing: {}", task.title),
@@ -205,6 +276,54 @@ impl SyncEngine {
                     self.state.update_task_metadata(&task.id, task).await?;
                 }
             } else {
+                // Before creating, check if there's already an item with the same title (possible duplicate)
+                if let Some(existing_items) = title_to_github.get(&task.title) {
+                    if !existing_items.is_empty() {
+                        tracing::warn!(
+                            "Found {} existing items with title '{}' but no TM_ID match. Possible duplicates.",
+                            existing_items.len(),
+                            task.title
+                        );
+
+                        // Try to find the best match and update it instead of creating a new one
+                        if existing_items.len() == 1 {
+                            let existing = &existing_items[0];
+                            tracing::info!(
+                                "Updating existing item without TM_ID for task: {}",
+                                task.id
+                            );
+
+                            // Update the existing item
+                            if let Err(e) = self.update_github_item(task, existing, &progress).await
+                            {
+                                errors
+                                    .push(format!("Failed to update duplicate {}: {}", task.id, e));
+                                progress
+                                    .record_error(format!(
+                                        "Error updating duplicate {}: {}",
+                                        task.id, e
+                                    ))
+                                    .await;
+                            } else {
+                                updated += 1;
+                                progress.record_updated(&task.id).await;
+                                self.state.update_task_metadata(&task.id, task).await?;
+
+                                // Add to our mapping to prevent further duplicates in this run
+                                tm_id_to_github.insert(task.id.clone(), existing.clone());
+                            }
+                            continue;
+                        }
+                        // Multiple duplicates - log warning but create new one
+                        // In production, you might want to handle this differently
+                        tracing::error!(
+                            "Multiple duplicates ({}) found for '{}'. Creating new item anyway.",
+                            existing_items.len(),
+                            task.title
+                        );
+                    }
+                }
+
                 // Create new item
                 match self.create_github_item(task, &progress).await {
                     Ok(result) => {
@@ -230,27 +349,31 @@ impl SyncEngine {
         }
 
         // Handle orphaned items (in GitHub but not in TaskMaster)
-        let current_task_ids: Vec<String> = tasks.tasks.iter().map(|t| t.id.clone()).collect();
-        let orphaned = self.state.find_orphaned_items(&tasks.tasks).await;
+        // Only check for orphans in full sync mode (delta sync handles removals explicitly)
+        if !options.use_delta_sync || options.force {
+            let _current_task_ids: Vec<String> =
+                tasks_clone.tasks.iter().map(|t| t.id.clone()).collect();
+            let orphaned = self.state.find_orphaned_items(&tasks_clone.tasks).await;
 
-        for orphan_id in orphaned {
-            if let Some(github_item) = tm_id_to_github.get(&orphan_id) {
-                if !options.dry_run {
-                    if let Err(e) = self
-                        .github
-                        .delete_project_item(&project_id, &github_item.id)
-                        .await
-                    {
-                        errors.push(format!(
-                            "Failed to delete orphaned item {}: {}",
-                            orphan_id, e
-                        ));
+            for orphan_id in orphaned {
+                if let Some(github_item) = tm_id_to_github.get(&orphan_id) {
+                    if !options.dry_run {
+                        if let Err(e) = self
+                            .github
+                            .delete_project_item(&project_id, &github_item.id)
+                            .await
+                        {
+                            errors.push(format!(
+                                "Failed to delete orphaned item {}: {}",
+                                orphan_id, e
+                            ));
+                        } else {
+                            deleted += 1;
+                            self.state.remove_task(&orphan_id).await?;
+                        }
                     } else {
-                        deleted += 1;
-                        self.state.remove_task(&orphan_id).await?;
+                        println!("DRY RUN: Would delete orphaned item {}", orphan_id);
                     }
-                } else {
-                    println!("DRY RUN: Would delete orphaned item {}", orphan_id);
                 }
             }
         }
@@ -326,8 +449,9 @@ impl SyncEngine {
                 .await?
         };
 
-        // Process subtasks - create separate issues for complex ones
-        if self.subtasks.is_enhanced_mode() && !task.subtasks.is_empty() {
+        // Process subtasks - temporarily disabled for performance and to focus on main task sync
+        // TODO: Re-enable optimized subtask processing after main task sync is perfected
+        if false && self.subtasks.is_enhanced_mode() && !task.subtasks.is_empty() {
             let repository = self
                 .project_mapping
                 .as_ref()
@@ -349,30 +473,157 @@ impl SyncEngine {
         }
 
         // Map task fields to GitHub fields
-        let mut field_values = self.fields.map_task_to_github(task)?;
+        let field_values = self.fields.map_task_to_github(task)?;
 
-        // Add hierarchy fields
-        self.subtasks.add_hierarchy_fields(&mut field_values, task);
+        // DISABLED FOR MVS: Add hierarchy fields
+        // self.subtasks.add_hierarchy_fields(&mut field_values, task);
+
+        // Track whether TM_ID was successfully set
+        let tm_id_set = false;
 
         // Update each field
         for (field_name, value) in field_values {
+            tracing::debug!("Processing field: {} = {:?}", field_name, value);
+            println!("DEBUG: Processing field: {} = {:?}", field_name, value);
+
             if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
+                tracing::debug!("Found field ID for {}: {}", field_name, field_id);
+                println!("DEBUG: Found field ID for {}: {}", field_name, field_id);
+
                 // Format value based on field type with option ID lookup for single select
                 let formatted_value = self
                     .format_field_value_enhanced(&field_name, value, &project_id)
                     .await?;
 
-                self.github
+                tracing::debug!("Formatted value for {}: {:?}", field_name, formatted_value);
+
+                match self
+                    .github
                     .update_field_value(
                         &project_id,
                         &result.project_item_id,
                         &field_id,
                         formatted_value,
                     )
-                    .await?;
+                    .await
+                {
+                    Ok(_) => {
+                        tracing::debug!("Successfully updated field: {}", field_name);
+                        println!("DEBUG: Successfully updated field: {}", field_name);
+                        if field_name == "TM_ID" {
+                            let _ = true; // tm_id_set tracking
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to update field {}: {}", field_name, e);
+                        println!("ERROR: Failed to update field {}: {}", field_name, e);
+                    }
+                }
 
-                // Small delay to avoid rate limiting
-                sleep(Duration::from_millis(100)).await;
+                // Small delay to avoid rate limiting - reduced for performance
+                sleep(Duration::from_millis(50)).await;
+            } else {
+                tracing::warn!(
+                    "No field ID found for field: {} (available fields: {:?})",
+                    field_name,
+                    self.fields
+                        .github_fields()
+                        .iter()
+                        .map(|f| &f.name)
+                        .collect::<Vec<_>>()
+                );
+                println!(
+                    "WARNING: No field ID found for field: {} (available fields: {:?})",
+                    field_name,
+                    self.fields
+                        .github_fields()
+                        .iter()
+                        .map(|f| &f.name)
+                        .collect::<Vec<_>>()
+                );
+
+                // Try to refresh GitHub fields and retry once
+                let github_fields = self.github.get_project_fields(&project_id).await?;
+                self.fields.set_github_fields(github_fields);
+
+                if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
+                    tracing::info!(
+                        "Found field ID after refresh for {}: {}",
+                        field_name,
+                        field_id
+                    );
+
+                    let formatted_value = self
+                        .format_field_value_enhanced(&field_name, value, &project_id)
+                        .await?;
+
+                    match self
+                        .github
+                        .update_field_value(
+                            &project_id,
+                            &result.project_item_id,
+                            &field_id,
+                            formatted_value,
+                        )
+                        .await
+                    {
+                        Ok(_) => {
+                            tracing::info!(
+                                "Successfully updated field after refresh: {}",
+                                field_name
+                            );
+                            if field_name == "TM_ID" {
+                                let _ = true; // tm_id_set tracking
+                            }
+                        }
+                        Err(e) => tracing::error!(
+                            "Failed to update field {} after refresh: {}",
+                            field_name,
+                            e
+                        ),
+                    }
+
+                    sleep(Duration::from_millis(50)).await;
+                } else {
+                    tracing::error!("Field {} not found even after refresh", field_name);
+                    println!("ERROR: Field {} not found even after refresh", field_name);
+                }
+            }
+        }
+
+        // Critical: Ensure TM_ID was set, otherwise this item will become a duplicate
+        if !tm_id_set {
+            tracing::error!(
+                "CRITICAL: Failed to set TM_ID for task '{}'. This will cause duplicates!",
+                task.id
+            );
+
+            // Try one more time to set TM_ID
+            if let Some(field_id) = self.fields.get_github_field_id("TM_ID") {
+                tracing::warn!("Attempting emergency TM_ID update for task: {}", task.id);
+                let tm_id_value = serde_json::json!({ "text": &task.id });
+
+                if let Err(e) = self
+                    .github
+                    .update_field_value(
+                        &project_id,
+                        &result.project_item_id,
+                        &field_id,
+                        tm_id_value,
+                    )
+                    .await
+                {
+                    tracing::error!("Emergency TM_ID update failed: {}", e);
+
+                    // Consider deleting the item to prevent duplicates
+                    tracing::error!(
+                        "WARNING: Item created without TM_ID. Consider manual cleanup for: {}",
+                        task.title
+                    );
+                } else {
+                    tracing::info!("Emergency TM_ID update succeeded for: {}", task.id);
+                    let _ = true; // tm_id_set tracking
+                }
             }
         }
 
@@ -401,22 +652,95 @@ impl SyncEngine {
         }
 
         // Update fields
-        let mut field_values = self.fields.map_task_to_github(task)?;
+        let field_values = self.fields.map_task_to_github(task)?;
 
-        // Add hierarchy fields
-        self.subtasks.add_hierarchy_fields(&mut field_values, task);
+        // DISABLED FOR MVS: Add hierarchy fields
+        // self.subtasks.add_hierarchy_fields(&mut field_values, task);
 
         for (field_name, value) in field_values {
+            tracing::debug!("Updating existing item field: {} = {:?}", field_name, value);
+
             if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
+                tracing::debug!(
+                    "Found field ID for existing item {}: {}",
+                    field_name,
+                    field_id
+                );
+
                 let formatted_value = self
                     .format_field_value_enhanced(&field_name, value, &project_id)
                     .await?;
 
-                self.github
+                match self
+                    .github
                     .update_field_value(&project_id, &github_item.id, &field_id, formatted_value)
-                    .await?;
+                    .await
+                {
+                    Ok(_) => {
+                        tracing::debug!("Successfully updated existing item field: {}", field_name)
+                    }
+                    Err(e) => tracing::error!(
+                        "Failed to update existing item field {}: {}",
+                        field_name,
+                        e
+                    ),
+                }
 
-                sleep(Duration::from_millis(100)).await;
+                sleep(Duration::from_millis(50)).await;
+            } else {
+                tracing::warn!(
+                    "No field ID found for existing item field: {} (available fields: {:?})",
+                    field_name,
+                    self.fields
+                        .github_fields()
+                        .iter()
+                        .map(|f| &f.name)
+                        .collect::<Vec<_>>()
+                );
+
+                // Try to refresh GitHub fields and retry once
+                let github_fields = self.github.get_project_fields(&project_id).await?;
+                self.fields.set_github_fields(github_fields);
+
+                if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
+                    tracing::info!(
+                        "Found field ID after refresh for existing item {}: {}",
+                        field_name,
+                        field_id
+                    );
+
+                    let formatted_value = self
+                        .format_field_value_enhanced(&field_name, value, &project_id)
+                        .await?;
+
+                    match self
+                        .github
+                        .update_field_value(
+                            &project_id,
+                            &github_item.id,
+                            &field_id,
+                            formatted_value,
+                        )
+                        .await
+                    {
+                        Ok(_) => tracing::info!(
+                            "Successfully updated existing item field after refresh: {}",
+                            field_name
+                        ),
+                        Err(e) => tracing::error!(
+                            "Failed to update existing item field {} after refresh: {}",
+                            field_name,
+                            e
+                        ),
+                    }
+
+                    sleep(Duration::from_millis(50)).await;
+                } else {
+                    tracing::error!(
+                        "Existing item field {} not found even after refresh",
+                        field_name
+                    );
+                }
             }
         }
 
@@ -583,7 +907,7 @@ impl SyncEngine {
             if field_value.field.name == "TM_ID" {
                 match &field_value.value {
                     FieldValueContent::Text(tm_id) => return Some(tm_id.clone()),
-                    _ => continue,
+                    _ => {}
                 }
             }
         }
@@ -591,7 +915,7 @@ impl SyncEngine {
     }
 
     /// Syncs tasks from GitHub
-    async fn sync_from_github(&mut self, _tag: &str, _options: &SyncOptions) -> Result<SyncResult> {
+    fn sync_from_github(&mut self, _tag: &str, _options: &SyncOptions) -> Result<SyncResult> {
         // TODO: Implement sync from GitHub to TaskMaster
         Err(TaskMasterError::NotImplemented(
             "Sync from GitHub not yet implemented".to_string(),
@@ -599,11 +923,7 @@ impl SyncEngine {
     }
 
     /// Performs bidirectional sync
-    async fn sync_bidirectional(
-        &mut self,
-        _tag: &str,
-        _options: &SyncOptions,
-    ) -> Result<SyncResult> {
+    fn sync_bidirectional(&mut self, _tag: &str, _options: &SyncOptions) -> Result<SyncResult> {
         // TODO: Implement bidirectional sync
         Err(TaskMasterError::NotImplemented(
             "Bidirectional sync not yet implemented".to_string(),
@@ -611,7 +931,7 @@ impl SyncEngine {
     }
 
     /// Validates sync prerequisites
-    async fn validate_sync_setup(&self) -> Result<()> {
+    fn validate_sync_setup(&self) -> Result<()> {
         // Check if we have a project
         if self.project.is_none() {
             return Err(TaskMasterError::ConfigError(
@@ -644,13 +964,14 @@ impl Default for SyncOptions {
             direction: SyncDirection::ToGitHub,
             batch_size: 50,
             include_archived: false,
+            use_delta_sync: true, // Default to delta sync for performance
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
 
     #[tokio::test]
     async fn test_sync_engine() {

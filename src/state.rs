@@ -297,7 +297,7 @@ mod tests {
         let task1 = Task {
             id: "1".to_string(),
             title: "Task 1".to_string(),
-            description: "".to_string(),
+            description: String::new(),
             status: "pending".to_string(),
             priority: None,
             dependencies: vec![],
@@ -310,7 +310,7 @@ mod tests {
         let task2 = Task {
             id: "2".to_string(),
             title: "Task 2".to_string(),
-            description: "".to_string(),
+            description: String::new(),
             status: "pending".to_string(),
             priority: None,
             dependencies: vec![],
@@ -347,7 +347,7 @@ mod tests {
                 Task {
                     id: "1".to_string(),
                     title: "Task 1".to_string(),
-                    description: "".to_string(),
+                    description: String::new(),
                     status: "done".to_string(),
                     priority: None,
                     dependencies: vec![],
@@ -364,7 +364,7 @@ mod tests {
                 Task {
                     id: "2".to_string(),
                     title: "Task 2".to_string(),
-                    description: "".to_string(),
+                    description: String::new(),
                     status: "in-progress".to_string(),
                     priority: None,
                     dependencies: vec![],
@@ -394,7 +394,7 @@ mod tests {
         let task = Task {
             id: "test".to_string(),
             title: "Test".to_string(),
-            description: "".to_string(),
+            description: String::new(),
             status: "pending".to_string(),
             priority: None,
             dependencies: vec![],

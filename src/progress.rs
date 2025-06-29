@@ -6,7 +6,6 @@
 //! - Statistics collection and reporting
 //! - Error and warning aggregation
 
-use crate::error::Result;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -145,11 +144,11 @@ impl ProgressTracker {
         todo!("Create progress bar style")
     }
 
-    fn format_duration(duration: std::time::Duration) -> String {
+    fn format_duration(_duration: std::time::Duration) -> String {
         todo!("Format duration for display")
     }
 
-    fn format_stats(stats: &SyncStats) -> String {
+    fn format_stats(_stats: &SyncStats) -> String {
         todo!("Format statistics for display")
     }
 }
@@ -160,7 +159,7 @@ pub mod messages {
         format!("Starting sync of {} tasks...", total)
     }
 
-    pub fn sync_complete(stats: &super::SyncStats) -> String {
+    pub fn sync_complete(_stats: &super::SyncStats) -> String {
         todo!("Format completion message")
     }
 
@@ -175,7 +174,6 @@ pub mod messages {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[tokio::test]
     async fn test_progress_tracking() {

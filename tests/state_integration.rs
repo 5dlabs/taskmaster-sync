@@ -1,6 +1,5 @@
 //! Integration tests for state tracking with GitHub synchronization
 
-use std::env;
 use task_master_sync::{error::Result, github::GitHubAPI, models::task::Task, state::StateTracker};
 
 // GitHub test organization and project

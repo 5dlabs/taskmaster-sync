@@ -183,10 +183,17 @@ impl FieldManager {
 
         // Map ID
         if let Some(mapping) = self.field_mappings.get("id") {
+            tracing::debug!(
+                "Mapping task ID {} to field {}",
+                task.id,
+                mapping.github_field
+            );
             github_fields.insert(
                 mapping.github_field.clone(),
                 Value::String(task.id.to_string()),
             );
+        } else {
+            tracing::warn!("No mapping found for 'id' field!");
         }
 
         // Map status with option ID lookup
@@ -199,18 +206,18 @@ impl FieldManager {
             github_fields.insert(mapping.github_field.clone(), Value::String(status_value));
         }
 
-        // Map priority with option ID lookup
-        if let Some(mapping) = self.field_mappings.get("priority") {
-            if let Some(priority) = &task.priority {
-                let priority_value =
-                    if let Some(FieldTransformer::PriorityMapper) = &mapping.transformer {
-                        self.transform_priority(priority)?
-                    } else {
-                        priority.clone()
-                    };
-                github_fields.insert(mapping.github_field.clone(), Value::String(priority_value));
-            }
-        }
+        // DISABLED FOR MVS: Map priority with option ID lookup
+        // if let Some(mapping) = self.field_mappings.get("priority") {
+        //     if let Some(priority) = &task.priority {
+        //         let priority_value =
+        //             if let Some(FieldTransformer::PriorityMapper) = &mapping.transformer {
+        //                 self.transform_priority(priority)?
+        //             } else {
+        //                 priority.clone()
+        //             };
+        //         github_fields.insert(mapping.github_field.clone(), Value::String(priority_value));
+        //     }
+        // }
 
         // Note: Assignee is handled differently - it's set directly on the GitHub issue,
         // not as a custom field in the project. This is handled in the GitHub API calls.
@@ -236,6 +243,11 @@ impl FieldManager {
             }
         }
 
+        tracing::debug!(
+            "Mapped fields for task {}: {:?}",
+            task.id,
+            github_fields.keys().collect::<Vec<_>>()
+        );
         Ok(github_fields)
     }
 
@@ -371,7 +383,7 @@ impl FieldManager {
     /// Transform status values with QA workflow
     fn transform_status(&self, status: &str) -> Result<String> {
         Ok(match status.to_lowercase().as_str() {
-            "pending" => "To Do".to_string(),
+            "pending" => "Todo".to_string(),
             "in-progress" => "In Progress".to_string(),
             // Key change: done becomes QA Review instead of Done
             // Only manual human intervention can set Done status
@@ -381,13 +393,13 @@ impl FieldManager {
         })
     }
 
-    /// Transform priority values
+    /// Transform priority values  
     fn transform_priority(&self, priority: &str) -> Result<String> {
         Ok(match priority.to_lowercase().as_str() {
-            "high" => "🔴 High".to_string(),
-            "medium" => "🟡 Medium".to_string(),
-            "low" => "🟢 Low".to_string(),
-            _ => priority.to_string(),
+            "high" => "high".to_string(),
+            "medium" => "medium".to_string(),
+            "low" => "low".to_string(),
+            _ => priority.to_lowercase(),
         })
     }
 
@@ -439,9 +451,9 @@ mod tests {
         assert_eq!(manager.transform_status("done").unwrap(), "Done");
 
         // Test priority transformation
-        assert_eq!(manager.transform_priority("high").unwrap(), "🔴 High");
-        assert_eq!(manager.transform_priority("medium").unwrap(), "🟡 Medium");
-        assert_eq!(manager.transform_priority("low").unwrap(), "🟢 Low");
+        assert_eq!(manager.transform_priority("high").unwrap(), "high");
+        assert_eq!(manager.transform_priority("medium").unwrap(), "medium");
+        assert_eq!(manager.transform_priority("low").unwrap(), "low");
     }
 
     #[test]

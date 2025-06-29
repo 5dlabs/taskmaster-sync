@@ -7,7 +7,7 @@ use task_master_sync::auth::GitHubAuth;
 async fn test_raw_graphql() {
     println!("Testing raw GraphQL query...");
 
-    let query = r#"
+    let query = r"
         query($org: String!, $number: Int!) {
             organization(login: $org) {
                 projectV2(number: $number) {
@@ -18,7 +18,7 @@ async fn test_raw_graphql() {
                 }
             }
         }
-    "#;
+    ";
 
     let variables = serde_json::json!({
         "org": "5dlabs",

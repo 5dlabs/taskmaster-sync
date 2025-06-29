@@ -461,7 +461,7 @@
         "id": "test-assignee-fix",
         "title": "Test Assignee Fix",
         "description": "Simple test task to verify assignee functionality works",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [],
         "details": null,
@@ -472,9 +472,9 @@
       {
         "id": "test-rest-api-assignee",
         "title": "Test REST API Assignee",
-        "description": "Testing assignee functionality with REST API approach",
-        "status": "pending",
-        "priority": "low",
+        "description": "Testing assignee functionality with REST API approach - UPDATED",
+        "status": "in-progress",
+        "priority": "medium",
         "dependencies": [],
         "details": null,
         "testStrategy": null,
@@ -549,6 +549,90 @@
           }
         ],
         "assignee": "pm0-5dlabs"
+      },
+      {
+        "id": "intelligent-delta-sync",
+        "title": "Implement Intelligent Delta Sync for Performance",
+        "description": "Replace full sync with intelligent delta sync that only processes changed tasks, dramatically improving sync performance for large projects",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "auto-project-discovery"
+        ],
+        "details": "Current implementation syncs ALL tasks every time a change is detected, causing slow performance on large projects. Implement intelligent delta sync that: 1) Tracks file changes at task-level granularity using file diff analysis, 2) Identifies specific tasks that were added, modified, or removed since last sync, 3) Includes dependent tasks in sync scope (tasks that depend on changed tasks), 4) Maintains state tracking for incremental updates, 5) Falls back to full sync when needed (major structural changes, first sync, error recovery), 6) Implements smart batching for related changes, 7) Adds periodic full sync option for consistency validation",
+        "testStrategy": "Test with large task files (50+ tasks), measure sync time improvements, validate that only changed tasks are processed, verify dependency handling works correctly",
+        "subtasks": [
+          {
+            "id": "change-detection-engine",
+            "title": "Task-Level Change Detection Engine",
+            "description": "Implement precise change detection that identifies which specific tasks changed",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Build change detection that compares current tasks.json with previous sync state to identify: added tasks, modified tasks (content changes), removed tasks, moved tasks, dependency changes. Use efficient diff algorithms and task fingerprinting.",
+            "testStrategy": "Test with various change scenarios: single task edits, bulk changes, task reordering, dependency updates",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "dependency-impact-analysis",
+            "title": "Dependency Impact Analysis",
+            "description": "Analyze task dependencies to determine which additional tasks need syncing when a task changes",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [
+              "change-detection-engine"
+            ],
+            "details": "When a task changes, identify all tasks that depend on it (direct and transitive dependencies) and include them in the sync scope. Handle dependency chain updates efficiently.",
+            "testStrategy": "Test dependency chains, verify all affected tasks are included in sync scope",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "incremental-state-tracking",
+            "title": "Enhanced Incremental State Tracking",
+            "description": "Extend state tracking to support incremental sync operations",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [
+              "change-detection-engine"
+            ],
+            "details": "Enhance the StateTracker to maintain checksums/fingerprints of tasks, track last modification times, and support incremental sync state management.",
+            "testStrategy": "Verify state tracking accurately reflects incremental changes",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "smart-sync-orchestration",
+            "title": "Smart Sync Orchestration Logic",
+            "description": "Implement the main delta sync logic that coordinates change detection with GitHub API calls",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [
+              "dependency-impact-analysis",
+              "incremental-state-tracking"
+            ],
+            "details": "Main orchestration logic that: processes only changed tasks and their dependencies, batches related changes efficiently, handles edge cases like conflicts and API errors, provides fallback to full sync when needed.",
+            "testStrategy": "Test end-to-end delta sync performance, measure API call reduction, validate correctness",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "performance-monitoring",
+            "title": "Delta Sync Performance Monitoring",
+            "description": "Add metrics and monitoring to track delta sync performance improvements",
+            "status": "pending",
+            "priority": "low",
+            "dependencies": [
+              "smart-sync-orchestration"
+            ],
+            "details": "Track metrics: sync time reduction, API calls saved, tasks processed vs total tasks, cache hit rates. Add performance logging and optional telemetry.",
+            "testStrategy": "Verify metrics accurately reflect performance improvements",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
       }
     ],
     "metadata": {

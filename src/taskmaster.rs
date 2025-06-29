@@ -79,7 +79,7 @@ impl TaskMasterReader {
     }
 
     /// Saves tasks back to tasks.json
-    pub async fn save_tasks(&self, tasks: Vec<Task>) -> Result<()> {
+    pub fn save_tasks(&self, _tasks: Vec<Task>) -> Result<()> {
         todo!("Save tasks to tasks.json with proper formatting")
     }
 
@@ -99,37 +99,37 @@ impl TaskMasterReader {
     }
 
     /// Gets a specific task by ID
-    pub async fn get_task(&self, task_id: &str) -> Option<Task> {
+    pub fn get_task(&self, _task_id: &str) -> Option<Task> {
         todo!("Find task by ID")
     }
 
     /// Updates a specific task
-    pub async fn update_task(&self, task: Task) -> Result<()> {
+    pub fn update_task(&self, _task: Task) -> Result<()> {
         todo!("Update specific task in memory and save")
     }
 
     /// Adds a new task
-    pub async fn add_task(&self, task: Task) -> Result<()> {
+    pub fn add_task(&self, _task: Task) -> Result<()> {
         todo!("Add new task and save")
     }
 
     /// Removes a task
-    pub async fn remove_task(&self, task_id: &str) -> Result<()> {
+    pub fn remove_task(&self, _task_id: &str) -> Result<()> {
         todo!("Remove task and save")
     }
 
     /// Validates task data
-    pub fn validate_task(&self, task: &Task) -> Result<()> {
+    pub fn validate_task(&self, _task: &Task) -> Result<()> {
         todo!("Validate task fields and consistency")
     }
 
     /// Reloads tasks from disk
-    pub async fn reload(&self) -> Result<()> {
+    pub fn reload(&self) -> Result<()> {
         todo!("Reload tasks from disk")
     }
 
     /// Checks if tasks.json exists
-    pub async fn exists(&self) -> bool {
+    pub fn exists(&self) -> bool {
         self.tasks_path.exists()
     }
 
@@ -148,7 +148,7 @@ impl TaskMasterReader {
     }
 
     /// Updates multiple tasks in a batch
-    pub async fn batch_update(&self, updates: Vec<Task>) -> Result<()> {
+    pub fn batch_update(&self, _updates: Vec<Task>) -> Result<()> {
         todo!("Update multiple tasks efficiently")
     }
 }
@@ -210,10 +210,9 @@ pub mod format {
 /// File locking utilities
 mod lock {
     use super::*;
-    use std::time::Duration;
 
     /// Acquires a file lock for safe writing
-    pub async fn acquire_lock(path: &Path) -> Result<FileLock> {
+    pub fn acquire_lock(_path: &Path) -> Result<FileLock> {
         todo!("Implement file locking mechanism")
     }
 

@@ -8,7 +8,7 @@
 
 use crate::error::Result;
 use crate::sync::{SyncEngine, SyncOptions};
-use notify::{Config, Event, EventKind, RecursiveMode, Watcher};
+use notify::{Event, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -18,8 +18,8 @@ use tokio::time;
 /// Watches TaskMaster files for changes and triggers sync
 pub struct TaskWatcher {
     watcher: Box<dyn Watcher + Send>,
-    sync_engine: Arc<Mutex<SyncEngine>>,
-    debounce_duration: Duration,
+    _sync_engine: Arc<Mutex<SyncEngine>>,
+    _debounce_duration: Duration,
     watch_path: PathBuf,
 }
 
@@ -34,15 +34,15 @@ pub enum WatchEvent {
 impl TaskWatcher {
     /// Creates a new task watcher
     pub fn new(
-        project_root: impl AsRef<Path>,
-        sync_engine: Arc<Mutex<SyncEngine>>,
-        debounce_duration: Duration,
+        _project_root: impl AsRef<Path>,
+        _sync_engine: Arc<Mutex<SyncEngine>>,
+        _debounce_duration: Duration,
     ) -> Result<Self> {
         todo!("Create file system watcher")
     }
 
     /// Starts watching for file changes
-    pub async fn start(&mut self) -> Result<()> {
+    pub fn start(&mut self) -> Result<()> {
         todo!("Start watching tasks.json for changes")
     }
 
@@ -52,12 +52,12 @@ impl TaskWatcher {
     }
 
     /// Handles file change events
-    async fn handle_event(&self, event: Event) -> Result<()> {
+    fn handle_event(&self, _event: Event) -> Result<()> {
         todo!("Process file system events")
     }
 
     /// Triggers a sync operation
-    async fn trigger_sync(&self) -> Result<()> {
+    fn trigger_sync(&self) -> Result<()> {
         todo!("Trigger sync with appropriate options")
     }
 
@@ -67,10 +67,10 @@ impl TaskWatcher {
     }
 
     /// Processes events with debouncing
-    async fn event_processor(
-        mut rx: mpsc::Receiver<WatchEvent>,
-        sync_engine: Arc<Mutex<SyncEngine>>,
-        debounce_duration: Duration,
+    fn event_processor(
+        _rx: mpsc::Receiver<WatchEvent>,
+        _sync_engine: Arc<Mutex<SyncEngine>>,
+        _debounce_duration: Duration,
     ) {
         todo!("Process events with debouncing logic")
     }

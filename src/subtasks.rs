@@ -8,7 +8,6 @@
 
 use crate::error::Result;
 use crate::github::{CreateItemResult, GitHubAPI};
-use crate::models::github::GitHubProjectItem;
 use crate::models::task::Task;
 use std::collections::HashMap;
 
@@ -105,7 +104,7 @@ impl SubtaskHandler {
     pub async fn process_subtasks(
         &mut self,
         task: &Task,
-        parent_github_item_id: &str,
+        _parent_github_item_id: &str,
         github: &GitHubAPI,
         project_id: &str,
         repository: Option<&str>,
@@ -328,12 +327,12 @@ mod utils {
     use super::*;
 
     /// Sorts tasks by hierarchy (parents before children)
-    pub fn sort_by_hierarchy(tasks: &mut Vec<Task>) {
+    pub fn sort_by_hierarchy(_tasks: &mut Vec<Task>) {
         todo!("Sort tasks so parents come before children")
     }
 
     /// Generates a visual tree representation
-    pub fn format_task_tree(nodes: &[TaskNode]) -> String {
+    pub fn format_task_tree(_nodes: &[TaskNode]) -> String {
         todo!("Generate ASCII tree representation of tasks")
     }
 
@@ -343,14 +342,13 @@ mod utils {
     }
 
     /// Finds all leaf tasks (no children)
-    pub fn find_leaf_tasks<'a>(tasks: &'a [Task], all_ids: &[String]) -> Vec<&'a Task> {
+    pub fn find_leaf_tasks<'a>(_tasks: &'a [Task], _all_ids: &[String]) -> Vec<&'a Task> {
         todo!("Find tasks with no children")
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_hierarchy_building() {

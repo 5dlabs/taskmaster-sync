@@ -7,7 +7,6 @@ use crate::auth::GitHubAuth;
 use crate::error::{Result, TaskMasterError};
 use crate::models::github::{CustomField, FieldValue, Project, ProjectItem};
 use serde_json::Value;
-use std::collections::HashMap;
 use tokio::time::{sleep, Duration};
 
 /// GitHub API client for project management
@@ -49,7 +48,7 @@ impl GitHubAPI {
 
     /// Gets a project by number
     pub async fn get_project(&self, project_number: i32) -> Result<Project> {
-        let query = r#"
+        let query = r"
             query($org: String!, $number: Int!) {
                 organization(login: $org) {
                     projectV2(number: $number) {
@@ -60,7 +59,7 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "org": self.organization,
@@ -81,7 +80,7 @@ impl GitHubAPI {
         let mut cursor: Option<String> = None;
 
         while has_next_page {
-            let query = r#"
+            let query = r"
                 query($projectId: ID!, $cursor: String) {
                     node(id: $projectId) {
                         ... on ProjectV2 {
@@ -144,7 +143,7 @@ impl GitHubAPI {
                         }
                     }
                 }
-            "#;
+            ";
 
             let variables = serde_json::json!({
                 "projectId": project_id,
@@ -216,7 +215,7 @@ impl GitHubAPI {
         title: &str,
         body: &str,
     ) -> Result<CreateItemResult> {
-        let mutation = r#"
+        let mutation = r"
             mutation($projectId: ID!, $title: String!, $body: String!) {
                 addProjectV2DraftIssue(input: {
                     projectId: $projectId,
@@ -233,7 +232,7 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "projectId": project_id,
@@ -269,7 +268,7 @@ impl GitHubAPI {
         body: &str,
         assignees: Option<Vec<String>>,
     ) -> Result<CreateIssueResult> {
-        let mutation = r#"
+        let mutation = r"
             mutation($repositoryId: ID!, $title: String!, $body: String!, $assigneeIds: [ID!]) {
                 createIssue(input: {
                     repositoryId: $repositoryId,
@@ -283,7 +282,7 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         // Parse repository owner/name
         let parts: Vec<&str> = repository.split('/').collect();
@@ -337,7 +336,7 @@ impl GitHubAPI {
         project_id: &str,
         issue_id: &str,
     ) -> Result<AddToProjectResult> {
-        let mutation = r#"
+        let mutation = r"
             mutation($projectId: ID!, $contentId: ID!) {
                 addProjectV2ItemById(input: {
                     projectId: $projectId,
@@ -348,7 +347,7 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "projectId": project_id,
@@ -367,13 +366,13 @@ impl GitHubAPI {
 
     /// Gets repository ID from owner and name
     async fn get_repository_id(&self, owner: &str, name: &str) -> Result<String> {
-        let query = r#"
+        let query = r"
             query($owner: String!, $name: String!) {
                 repository(owner: $owner, name: $name) {
                     id
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "owner": owner,
@@ -397,12 +396,12 @@ impl GitHubAPI {
     /// TODO: Add method to get DraftIssue ID from ProjectItem ID
     pub async fn update_project_item(
         &self,
-        project_id: &str,
+        _project_id: &str,
         item_id: &str,
         title: &str,
         body: &str,
     ) -> Result<()> {
-        let mutation = r#"
+        let mutation = r"
             mutation($draftIssueId: ID!, $title: String!, $body: String!) {
                 updateProjectV2DraftIssue(input: {
                     draftIssueId: $draftIssueId,
@@ -416,7 +415,7 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "draftIssueId": item_id,
@@ -436,7 +435,7 @@ impl GitHubAPI {
         field_id: &str,
         value: serde_json::Value,
     ) -> Result<()> {
-        let mutation = r#"
+        let mutation = r"
             mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
                 updateProjectV2ItemFieldValue(input: {
                     projectId: $projectId,
@@ -449,7 +448,7 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "projectId": project_id,
@@ -464,7 +463,7 @@ impl GitHubAPI {
 
     /// Deletes a project item
     pub async fn delete_project_item(&self, project_id: &str, item_id: &str) -> Result<()> {
-        let mutation = r#"
+        let mutation = r"
             mutation($projectId: ID!, $itemId: ID!) {
                 deleteProjectV2Item(input: {
                     projectId: $projectId,
@@ -473,7 +472,7 @@ impl GitHubAPI {
                     deletedItemId
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "projectId": project_id,
@@ -486,7 +485,7 @@ impl GitHubAPI {
 
     /// Gets project fields
     pub async fn get_project_fields(&self, project_id: &str) -> Result<Vec<CustomField>> {
-        let query = r#"
+        let query = r"
             query($projectId: ID!) {
                 node(id: $projectId) {
                     ... on ProjectV2 {
@@ -512,7 +511,7 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "projectId": project_id
@@ -541,7 +540,7 @@ impl GitHubAPI {
     ) -> Result<String> {
         let (mutation, variables) = match data_type {
             "TEXT" => {
-                let mutation = r#"
+                let mutation = r"
                 mutation($projectId: ID!, $name: String!) {
                     createProjectV2Field(input: {
                         projectId: $projectId,
@@ -555,7 +554,7 @@ impl GitHubAPI {
                         }
                     }
                 }
-            "#;
+            ";
                 let variables = serde_json::json!({
                     "projectId": project_id,
                     "name": name
@@ -563,7 +562,7 @@ impl GitHubAPI {
                 (mutation, variables)
             }
             "SINGLE_SELECT" => {
-                let mutation = r#"
+                let mutation = r"
                 mutation($projectId: ID!, $name: String!, $options: [ProjectV2SingleSelectFieldOptionInput!]!) {
                     createProjectV2Field(input: {
                         projectId: $projectId,
@@ -578,7 +577,7 @@ impl GitHubAPI {
                         }
                     }
                 }
-            "#;
+            ";
 
                 // Provide default options based on field name
                 let options = match name {
@@ -629,13 +628,13 @@ impl GitHubAPI {
 
     /// Gets user ID by username
     async fn get_user_id(&self, username: &str) -> Result<String> {
-        let query = r#"
+        let query = r"
             query($login: String!) {
                 user(login: $login) {
                     id
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
             "login": username
@@ -657,12 +656,39 @@ impl GitHubAPI {
         option_name: &str,
         color: &str,
     ) -> Result<String> {
-        let mutation = r#"
-            mutation($projectId: ID!, $fieldId: ID!, $option: ProjectV2SingleSelectFieldOptionInput!) {
+        // First, get current options to preserve them
+        let current_field = self
+            .get_project_fields(project_id)
+            .await?
+            .into_iter()
+            .find(|f| f.id == field_id)
+            .ok_or_else(|| TaskMasterError::GitHubError("Field not found".to_string()))?;
+
+        let mut all_options = Vec::new();
+
+        // Add existing options
+        if let Some(existing_options) = &current_field.options {
+            for option in existing_options {
+                all_options.push(serde_json::json!({
+                    "name": option.name,
+                    "color": option.color,
+                    "description": format!("{} option", option.name)
+                }));
+            }
+        }
+
+        // Add new option
+        all_options.push(serde_json::json!({
+            "name": option_name,
+            "color": color,
+            "description": format!("{} option", option_name)
+        }));
+
+        let mutation = r"
+            mutation($fieldId: ID!, $options: [ProjectV2SingleSelectFieldOptionInput!]!) {
                 updateProjectV2Field(input: {
-                    projectId: $projectId,
                     fieldId: $fieldId,
-                    singleSelectOptions: [$option]
+                    singleSelectOptions: $options
                 }) {
                     projectV2Field {
                         ... on ProjectV2SingleSelectField {
@@ -674,16 +700,11 @@ impl GitHubAPI {
                     }
                 }
             }
-        "#;
+        ";
 
         let variables = serde_json::json!({
-            "projectId": project_id,
             "fieldId": field_id,
-            "option": {
-                "name": option_name,
-                "color": color,
-                "description": format!("{} option", option_name)
-            }
+            "options": all_options
         });
 
         let response = self.execute_with_retry(mutation, variables).await?;
@@ -703,6 +724,102 @@ impl GitHubAPI {
             "Failed to create option '{}' for field",
             option_name
         )))
+    }
+
+    /// Creates a new GitHub Project with repository linking
+    pub async fn create_project(
+        &self,
+        title: &str,
+        _description: Option<&str>,
+        repository: Option<&str>,
+    ) -> Result<Project> {
+        // First get the repository ID if repository is specified
+        let repository_id = if let Some(repo) = repository {
+            // Parse owner/repo format
+            let parts: Vec<&str> = repo.split('/').collect();
+            if parts.len() != 2 {
+                return Err(TaskMasterError::InvalidTaskFormat(format!(
+                    "Repository must be in format 'owner/repo', got '{}'",
+                    repo
+                )));
+            }
+            Some(self.get_repository_id(parts[0], parts[1]).await?)
+        } else {
+            None
+        };
+
+        // Get organization ID
+        let owner_id = self.get_organization_id().await?;
+
+        let mutation = r"
+            mutation($ownerId: ID!, $title: String!, $repositoryId: ID) {
+                createProjectV2(input: {
+                    ownerId: $ownerId,
+                    title: $title,
+                    repositoryId: $repositoryId
+                }) {
+                    projectV2 {
+                        id
+                        title
+                        number
+                        url
+                        shortDescription
+                        readme
+                        public
+                        closed
+                        createdAt
+                        updatedAt
+                        owner {
+                            ... on Organization {
+                                login
+                            }
+                        }
+                    }
+                }
+            }
+        ";
+
+        let variables = serde_json::json!({
+            "ownerId": owner_id,
+            "title": title,
+            "repositoryId": repository_id
+        });
+
+        let response = self.execute_with_retry(mutation, variables).await?;
+
+        let project_data = &response["data"]["createProjectV2"]["projectV2"];
+
+        Ok(Project {
+            id: project_data["id"].as_str().unwrap_or("").to_string(),
+            title: project_data["title"].as_str().unwrap_or("").to_string(),
+            number: project_data["number"].as_i64().unwrap_or(0) as i32,
+            url: project_data["url"].as_str().unwrap_or("").to_string(),
+            description: project_data["shortDescription"]
+                .as_str()
+                .map(|s| s.to_string()),
+        })
+    }
+
+    /// Gets organization ID
+    async fn get_organization_id(&self) -> Result<String> {
+        let query = r"
+            query($login: String!) {
+                organization(login: $login) {
+                    id
+                }
+            }
+        ";
+
+        let variables = serde_json::json!({
+            "login": self.organization
+        });
+
+        let response = self.execute_with_retry(query, variables).await?;
+
+        Ok(response["data"]["organization"]["id"]
+            .as_str()
+            .unwrap_or("")
+            .to_string())
     }
 
     /// Executes a GraphQL query with retry logic

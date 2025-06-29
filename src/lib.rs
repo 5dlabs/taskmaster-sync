@@ -2,8 +2,11 @@
 //
 // This crate provides functionality to sync Taskmaster tasks with GitHub Projects
 
+#![allow(dead_code)] // Allow dead code for incomplete functionality
+
 pub mod auth;
 pub mod config;
+pub mod delta;
 pub mod error;
 pub mod fields;
 pub mod github;

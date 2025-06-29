@@ -55,11 +55,11 @@ async fn test_last_sync_tracking() {
     config.set_organization("test-org".to_string());
 
     // No last sync initially
-    assert!(config.config().last_sync.get("master").is_none());
+    assert!(!config.config().last_sync.contains_key("master"));
 
     // Update last sync
     config.update_last_sync("master");
 
     // Should have timestamp now
-    assert!(config.config().last_sync.get("master").is_some());
+    assert!(config.config().last_sync.contains_key("master"));
 }

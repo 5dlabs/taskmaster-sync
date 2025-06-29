@@ -140,7 +140,7 @@ async fn test_state_tracking_with_github() -> Result<()> {
     println!("\nCleaning up test items...");
     for item_id in created_items {
         api.delete_project_item(&project.id, &item_id).await?;
-        println!("✓ Deleted test item: {}", item_id);
+        println!("✓ Deleted test item: {item_id}");
     }
 
     println!("\n✅ All state tracking tests passed!");

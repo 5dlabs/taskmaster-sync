@@ -115,7 +115,7 @@ impl SyncEngine {
 
             // Try to detect repository from GitHub Actions environment or git remote
             let detected_repository = Self::detect_repository();
-            
+
             // Determine project title from tag and config
             let title = if let Some(mapping) = config.get_project_mapping(tag) {
                 format!(
@@ -128,7 +128,11 @@ impl SyncEngine {
                     tag
                 )
             } else if let Some(ref repo) = detected_repository {
-                format!("TaskMaster - {} ({})", repo.split('/').last().unwrap_or(tag), tag)
+                format!(
+                    "TaskMaster - {} ({})",
+                    repo.split('/').last().unwrap_or(tag),
+                    tag
+                )
             } else {
                 format!("TaskMaster Project - {}", tag)
             };
@@ -139,7 +143,7 @@ impl SyncEngine {
                 .and_then(|m| m.repository.as_ref())
                 .map(|s| s.as_str())
                 .or(detected_repository.as_deref());
-            
+
             // Clone repository for later use
             let repository_clone = repository.map(|s| s.to_string());
 
@@ -171,7 +175,7 @@ impl SyncEngine {
 
             // Update config with the new project number and repository
             let needs_new_mapping = config.get_project_mapping(tag).is_none();
-            
+
             if needs_new_mapping {
                 // Create new mapping if it doesn't exist
                 let new_mapping = crate::models::config::ProjectMapping {
@@ -220,20 +224,24 @@ impl SyncEngine {
 
                         // Try to detect repository
                         let detected_repository = Self::detect_repository();
-                        
+
                         let title = if let Some(ref repo) = detected_repository {
-                            format!("TaskMaster - {} ({})", repo.split('/').last().unwrap_or(tag), tag)
+                            format!(
+                                "TaskMaster - {} ({})",
+                                repo.split('/').last().unwrap_or(tag),
+                                tag
+                            )
                         } else {
                             format!("TaskMaster Project - {}", tag)
                         };
-                        
+
                         // Use repository from config or detected
                         let repository = config
                             .get_project_mapping(tag)
                             .and_then(|m| m.repository.as_ref())
                             .map(|s| s.as_str())
                             .or(detected_repository.as_deref());
-                        
+
                         let created_project = github
                             .create_project(
                                 &title,
@@ -1156,7 +1164,7 @@ impl SyncEngine {
             tracing::info!("Detected repository from GITHUB_REPOSITORY: {}", repository);
             return Some(repository);
         }
-        
+
         // Try to get from git remote
         if let Ok(output) = std::process::Command::new("git")
             .args(&["config", "--get", "remote.origin.url"])
@@ -1171,10 +1179,10 @@ impl SyncEngine {
                 }
             }
         }
-        
+
         None
     }
-    
+
     /// Parses GitHub repository from various URL formats
     fn parse_github_url(url: &str) -> Option<String> {
         // Handle SSH format: git@github.com:owner/repo.git
@@ -1184,7 +1192,7 @@ impl SyncEngine {
                 return Some(parts[1].trim_end_matches(".git").to_string());
             }
         }
-        
+
         // Handle HTTPS format: https://github.com/owner/repo.git
         if url.contains("github.com/") {
             let parts: Vec<&str> = url.split("github.com/").collect();
@@ -1192,7 +1200,7 @@ impl SyncEngine {
                 return Some(parts[1].trim_end_matches(".git").to_string());
             }
         }
-        
+
         None
     }
 

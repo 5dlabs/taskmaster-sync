@@ -224,15 +224,15 @@ impl FieldManager {
             if let Some(assignee) = &task.assignee {
                 // Try to map the assignee to a GitHub username
                 let mapped_value = if let Ok(agent_mapping) = self.load_agent_mapping() {
-                    agent_mapping.get(assignee).cloned().unwrap_or_else(|| assignee.clone())
+                    agent_mapping
+                        .get(assignee)
+                        .cloned()
+                        .unwrap_or_else(|| assignee.clone())
                 } else {
                     assignee.clone()
                 };
-                
-                github_fields.insert(
-                    mapping.github_field.clone(),
-                    Value::String(mapped_value),
-                );
+
+                github_fields.insert(mapping.github_field.clone(), Value::String(mapped_value));
             }
         }
 

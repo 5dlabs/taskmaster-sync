@@ -72,7 +72,22 @@ runs:
         # Determine version
         VERSION="${{ inputs.version }}"
         if [ "$VERSION" = "latest" ]; then
-          VERSION=$(curl -s https://api.github.com/repos/5dlabs/taskmaster-sync/releases/latest | jq -r .tag_name)
+          echo "Fetching latest release version..."
+          
+          # Use GitHub token if available to avoid rate limits
+          if [ -n "${{ inputs.github-token }}" ]; then
+            VERSION=$(curl -s -H "Authorization: token ${{ inputs.github-token }}" https://api.github.com/repos/5dlabs/taskmaster-sync/releases/latest | jq -r .tag_name)
+          else
+            VERSION=$(curl -s https://api.github.com/repos/5dlabs/taskmaster-sync/releases/latest | jq -r .tag_name)
+          fi
+          
+          # Check if VERSION is empty or null
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "Error: Failed to fetch latest version from GitHub API"
+            echo "API Response:"
+            curl -s https://api.github.com/repos/5dlabs/taskmaster-sync/releases/latest | head -20
+            exit 1
+          fi
         fi
 
         echo "Using taskmaster-sync version: $VERSION"
@@ -100,11 +115,27 @@ runs:
         DOWNLOAD_URL="https://github.com/5dlabs/taskmaster-sync/releases/download/${VERSION}/${BINARY_NAME}"
 
         echo "Downloading from: $DOWNLOAD_URL"
-        curl -L -o task-master-sync${EXT} "$DOWNLOAD_URL"
+        
+        # Download with error handling
+        # Note: We download as the release asset name but execute as task-master-sync
+        if ! curl -L -f -o taskmaster-sync${EXT} "$DOWNLOAD_URL"; then
+          echo "Error: Failed to download binary from $DOWNLOAD_URL"
+          echo "Please check that version $VERSION exists and has the $BINARY_NAME asset"
+          exit 1
+        fi
+        
+        # Rename to match the actual binary name
+        mv taskmaster-sync${EXT} task-master-sync${EXT}
         chmod +x task-master-sync${EXT}
 
         # Verify download
-        ./task-master-sync${EXT} --version
+        if ! ./task-master-sync${EXT} --version; then
+          echo "Error: Downloaded binary failed to execute"
+          echo "File details:"
+          ls -la task-master-sync${EXT}
+          file task-master-sync${EXT}
+          exit 1
+        fi
 
     - name: Run sync
       id: sync

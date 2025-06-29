@@ -633,6 +633,20 @@
           }
         ],
         "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "github-action-publishing",
+        "title": "Publish taskmaster-sync as a GitHub Action",
+        "description": "Publish taskmaster-sync as a reusable GitHub Action to the GitHub Marketplace. This includes the action.yml file (already created), release workflow that builds multi-platform binaries, and documentation. Users should be able to add taskmaster-sync to their workflows with a simple 'uses: 5dlabs/taskmaster-sync@v1' directive.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "rust-distribution"
+        ],
+        "details": "The GitHub Action publishing includes: 1) action.yml file that defines inputs/outputs and downloads appropriate binary based on platform, 2) Release workflow (.github/workflows/release.yml) that builds binaries for Linux, macOS (Intel & ARM), and Windows, 3) Automatic major version tagging (v1, v2) for easy version pinning, 4) GitHub Marketplace publishing configuration, 5) Example workflows showing PR-based sync and bidirectional sync patterns, 6) Documentation updates highlighting GitHub Action as primary installation method. The action handles authentication via GITHUB_TOKEN, supports all CLI options as inputs, and provides sync statistics as outputs.",
+        "testStrategy": "Test action locally using act, verify binary downloads work on all platforms, test in a real repository workflow, validate marketplace listing appears correctly",
+        "subtasks": [],
+        "assignee": "swe-1-5dlabs"
       }
     ],
     "metadata": {

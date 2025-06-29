@@ -168,6 +168,7 @@ impl TaskWatcher {
                             batch_size: 50,
                             include_archived: false,
                             use_delta_sync: true,
+                            quiet: false,
                         };
 
                         drop(engine); // Release lock before sync

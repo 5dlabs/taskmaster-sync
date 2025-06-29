@@ -86,9 +86,13 @@ enum Commands {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Initialize logging
-    let log_level = if cli.verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt().with_env_filter(log_level).init();
+    // Initialize logging - but check if we're in JSON mode first
+    let suppress_logs = matches!(&cli.command, Commands::Sync { json: true, .. });
+    
+    if !suppress_logs {
+        let log_level = if cli.verbose { "debug" } else { "info" };
+        tracing_subscriber::fmt().with_env_filter(log_level).init();
+    }
 
     match cli.command {
         Commands::Sync {
@@ -100,7 +104,12 @@ async fn main() -> Result<()> {
             full_sync,
             json,
         } => {
-            tracing::info!("Syncing tag '{}' to project '{}'", tag, project);
+            if !json {
+                tracing::info!("Syncing tag '{}' to project '{}'", tag, project);
+            } else {
+                // Set env var to suppress output in sync code
+                std::env::set_var("TASKMASTER_QUIET", "1");
+            }
 
             // Initialize sync engine
             let config_path = ".taskmaster/sync-config.json";
@@ -113,7 +122,15 @@ async fn main() -> Result<()> {
             {
                 Ok(engine) => engine,
                 Err(e) => {
-                    eprintln!("Failed to initialize sync engine: {e}");
+                    if json {
+                        let json_output = serde_json::json!({
+                            "success": false,
+                            "error": format!("Failed to initialize sync engine: {}", e)
+                        });
+                        println!("{}", serde_json::to_string(&json_output).unwrap());
+                    } else {
+                        eprintln!("Failed to initialize sync engine: {e}");
+                    }
                     std::process::exit(1);
                 }
             };
@@ -126,6 +143,7 @@ async fn main() -> Result<()> {
                 batch_size: 50,
                 include_archived: false,
                 use_delta_sync: !full_sync, // Use delta sync unless full sync is forced
+                quiet: json, // Suppress output in JSON mode
             };
 
             // Run sync

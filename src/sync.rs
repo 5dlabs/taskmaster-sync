@@ -45,6 +45,7 @@ pub struct SyncOptions {
     pub batch_size: usize,
     pub include_archived: bool,
     pub use_delta_sync: bool,
+    pub quiet: bool,
 }
 
 /// Sync direction
@@ -143,11 +144,15 @@ impl SyncEngine {
                 created_project.title,
                 created_project.number
             );
-            println!(
-                "🎉 Created new GitHub Project: {} (#{}) ",
-                created_project.title, created_project.number
-            );
-            println!("   URL: {}", created_project.url);
+            if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                println!(
+                    "🎉 Created new GitHub Project: {} (#{}) ",
+                    created_project.title, created_project.number
+                );
+            }
+            if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                println!("   URL: {}", created_project.url);
+            }
 
             // Set up required fields
             Self::setup_project_fields(&github, &created_project.id).await?;
@@ -157,10 +162,12 @@ impl SyncEngine {
                 mapping.project_number = created_project.number;
                 mapping.project_id = created_project.id.clone();
                 config.save().await?;
-                println!(
-                    "   ✅ Updated config with project number: {}",
-                    created_project.number
-                );
+                if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                    println!(
+                        "   ✅ Updated config with project number: {}",
+                        created_project.number
+                    );
+                }
             }
 
             created_project
@@ -197,14 +204,18 @@ impl SyncEngine {
                             created_project.title,
                             created_project.number
                         );
-                        println!(
-                            "🎉 Created new GitHub Project: {} (#{})",
-                            created_project.title, created_project.number
-                        );
-                        println!(
-                            "   Note: Requested project #{} was not available",
-                            project_number
-                        );
+                        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                            println!(
+                                "🎉 Created new GitHub Project: {} (#{})",
+                                created_project.title, created_project.number
+                            );
+                        }
+                        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                            println!(
+                                "   Note: Requested project #{} was not available",
+                                project_number
+                            );
+                        }
 
                         // Set up required fields
                         Self::setup_project_fields(&github, &created_project.id).await?;
@@ -355,7 +366,9 @@ impl SyncEngine {
                                     self.state.remove_task(&task.id).await?;
                                 }
                             } else {
-                                println!("DRY RUN: Would delete removed task {}", task.id);
+                                if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                                    println!("DRY RUN: Would delete removed task {}", task.id);
+                                }
                                 deleted += 1;
                             }
                         }
@@ -380,7 +393,9 @@ impl SyncEngine {
             );
 
             if options.dry_run {
-                println!("DRY RUN: Would process task {}: {}", task.id, task.title);
+                if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                    println!("DRY RUN: Would process task {}: {}", task.id, task.title);
+                }
                 skipped += 1;
                 continue;
             }
@@ -491,7 +506,9 @@ impl SyncEngine {
                             self.state.remove_task(&orphan_id).await?;
                         }
                     } else {
-                        println!("DRY RUN: Would delete orphaned item {orphan_id}");
+                        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                            println!("DRY RUN: Would delete orphaned item {orphan_id}");
+                        }
                     }
                 }
             }
@@ -515,7 +532,7 @@ impl SyncEngine {
             end_time: Some(std::time::Instant::now()),
         };
 
-        if !errors.is_empty() {
+        if !errors.is_empty() && std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
             eprintln!("\nSync completed with {} errors:", errors.len());
             for error in &errors {
                 eprintln!("  - {error}");
@@ -605,11 +622,11 @@ impl SyncEngine {
         // Update each field
         for (field_name, value) in field_values {
             tracing::debug!("Processing field: {} = {:?}", field_name, value);
-            println!("DEBUG: Processing field: {field_name} = {value:?}");
+            // DEBUG: Processing field
 
             if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
                 tracing::debug!("Found field ID for {}: {}", field_name, field_id);
-                println!("DEBUG: Found field ID for {field_name}: {field_id}");
+                // DEBUG: Found field ID
 
                 // Format value based on field type with option ID lookup for single select
                 let formatted_value = self
@@ -630,14 +647,14 @@ impl SyncEngine {
                 {
                     Ok(_) => {
                         tracing::debug!("Successfully updated field: {}", field_name);
-                        println!("DEBUG: Successfully updated field: {field_name}");
+                        // DEBUG: Successfully updated field
                         if field_name == "TM_ID" {
                             tm_id_set = true;
                         }
                     }
                     Err(e) => {
                         tracing::error!("Failed to update field {}: {}", field_name, e);
-                        println!("ERROR: Failed to update field {field_name}: {e}");
+                        tracing::error!("Failed to update field {field_name}: {e}");
                     }
                 }
 
@@ -653,8 +670,8 @@ impl SyncEngine {
                         .map(|f| &f.name)
                         .collect::<Vec<_>>()
                 );
-                println!(
-                    "WARNING: No field ID found for field: {} (available fields: {:?})",
+                tracing::warn!(
+                    "No field ID found for field: {} (available fields: {:?})",
                     field_name,
                     self.fields
                         .github_fields()
@@ -707,7 +724,7 @@ impl SyncEngine {
                     sleep(Duration::from_millis(50)).await;
                 } else {
                     tracing::error!("Field {} not found even after refresh", field_name);
-                    println!("ERROR: Field {field_name} not found even after refresh");
+                    tracing::error!("Field {field_name} not found even after refresh");
                 }
             }
         }
@@ -1094,7 +1111,7 @@ impl SyncEngine {
         tracing::info!("Setting up required fields for project");
 
         // Initialize field manager
-        let mut field_manager = FieldManager::new();
+        let field_manager = FieldManager::new();
 
         // Create required custom fields
         field_manager
@@ -1145,6 +1162,7 @@ impl Default for SyncOptions {
             batch_size: 50,
             include_archived: false,
             use_delta_sync: true, // Default to delta sync for performance
+            quiet: false,
         }
     }
 }

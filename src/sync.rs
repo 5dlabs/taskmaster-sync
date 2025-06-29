@@ -113,6 +113,9 @@ impl SyncEngine {
             // Special case: 0 means auto-create
             tracing::info!("Auto-creating new project...");
 
+            // Try to detect repository from GitHub Actions environment or git remote
+            let detected_repository = Self::detect_repository();
+            
             // Determine project title from tag and config
             let title = if let Some(mapping) = config.get_project_mapping(tag) {
                 format!(
@@ -124,18 +127,27 @@ impl SyncEngine {
                         .unwrap_or(tag),
                     tag
                 )
+            } else if let Some(ref repo) = detected_repository {
+                format!("TaskMaster - {} ({})", repo.split('/').last().unwrap_or(tag), tag)
             } else {
                 format!("TaskMaster Project - {}", tag)
             };
+
+            // Use repository from config or detected
+            let repository = config
+                .get_project_mapping(tag)
+                .and_then(|m| m.repository.as_ref())
+                .map(|s| s.as_str())
+                .or(detected_repository.as_deref());
+            
+            // Clone repository for later use
+            let repository_clone = repository.map(|s| s.to_string());
 
             let created_project = github
                 .create_project(
                     &title,
                     Some("Auto-created by taskmaster-sync GitHub Action"),
-                    config
-                        .get_project_mapping(tag)
-                        .and_then(|m| m.repository.as_ref())
-                        .map(|s| s.as_str()),
+                    repository,
                 )
                 .await?;
 
@@ -157,17 +169,36 @@ impl SyncEngine {
             // Set up required fields
             Self::setup_project_fields(&github, &created_project.id).await?;
 
-            // Update config with the new project number
-            if let Some(mapping) = config.get_project_mapping_mut(tag) {
-                mapping.project_number = created_project.number;
-                mapping.project_id = created_project.id.clone();
-                config.save().await?;
-                if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
-                    println!(
-                        "   ✅ Updated config with project number: {}",
-                        created_project.number
-                    );
+            // Update config with the new project number and repository
+            let needs_new_mapping = config.get_project_mapping(tag).is_none();
+            
+            if needs_new_mapping {
+                // Create new mapping if it doesn't exist
+                let new_mapping = crate::models::config::ProjectMapping {
+                    project_number: created_project.number,
+                    project_id: created_project.id.clone(),
+                    repository: repository_clone.clone(),
+                    subtask_mode: crate::models::config::SubtaskMode::Nested,
+                    field_mappings: None,
+                };
+                config.add_project_mapping(tag.to_string(), new_mapping);
+            } else {
+                // Update existing mapping
+                if let Some(mapping) = config.get_project_mapping_mut(tag) {
+                    mapping.project_number = created_project.number;
+                    mapping.project_id = created_project.id.clone();
+                    // Save repository if it was detected and not already set
+                    if mapping.repository.is_none() && repository_clone.is_some() {
+                        mapping.repository = repository_clone.clone();
+                    }
                 }
+            }
+            config.save().await?;
+            if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                println!(
+                    "   ✅ Updated config with project number: {}",
+                    created_project.number
+                );
             }
 
             created_project
@@ -187,15 +218,27 @@ impl SyncEngine {
                             project_number
                         );
 
-                        let title = format!("TaskMaster Project - {}", tag);
+                        // Try to detect repository
+                        let detected_repository = Self::detect_repository();
+                        
+                        let title = if let Some(ref repo) = detected_repository {
+                            format!("TaskMaster - {} ({})", repo.split('/').last().unwrap_or(tag), tag)
+                        } else {
+                            format!("TaskMaster Project - {}", tag)
+                        };
+                        
+                        // Use repository from config or detected
+                        let repository = config
+                            .get_project_mapping(tag)
+                            .and_then(|m| m.repository.as_ref())
+                            .map(|s| s.as_str())
+                            .or(detected_repository.as_deref());
+                        
                         let created_project = github
                             .create_project(
                                 &title,
                                 Some("Auto-created by taskmaster-sync"),
-                                config
-                                    .get_project_mapping(tag)
-                                    .and_then(|m| m.repository.as_ref())
-                                    .map(|s| s.as_str()),
+                                repository,
                             )
                             .await?;
 
@@ -1104,6 +1147,53 @@ impl SyncEngine {
         // The GitHub API client already handles this
 
         Ok(())
+    }
+
+    /// Detects repository from environment or git configuration
+    fn detect_repository() -> Option<String> {
+        // First try GitHub Actions environment variable
+        if let Ok(repository) = std::env::var("GITHUB_REPOSITORY") {
+            tracing::info!("Detected repository from GITHUB_REPOSITORY: {}", repository);
+            return Some(repository);
+        }
+        
+        // Try to get from git remote
+        if let Ok(output) = std::process::Command::new("git")
+            .args(&["config", "--get", "remote.origin.url"])
+            .output()
+        {
+            if output.status.success() {
+                let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                // Parse GitHub URL formats
+                if let Some(repo) = Self::parse_github_url(&url) {
+                    tracing::info!("Detected repository from git remote: {}", repo);
+                    return Some(repo);
+                }
+            }
+        }
+        
+        None
+    }
+    
+    /// Parses GitHub repository from various URL formats
+    fn parse_github_url(url: &str) -> Option<String> {
+        // Handle SSH format: git@github.com:owner/repo.git
+        if url.starts_with("git@github.com:") {
+            let parts: Vec<&str> = url.split(':').collect();
+            if parts.len() == 2 {
+                return Some(parts[1].trim_end_matches(".git").to_string());
+            }
+        }
+        
+        // Handle HTTPS format: https://github.com/owner/repo.git
+        if url.contains("github.com/") {
+            let parts: Vec<&str> = url.split("github.com/").collect();
+            if parts.len() == 2 {
+                return Some(parts[1].trim_end_matches(".git").to_string());
+            }
+        }
+        
+        None
     }
 
     /// Sets up required fields for a newly created project

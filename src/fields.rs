@@ -219,12 +219,19 @@ impl FieldManager {
             }
         }
 
-        // Map assignee to Agent field
+        // Map assignee to Agent field with proper GitHub username mapping
         if let Some(mapping) = self.field_mappings.get("assignee") {
             if let Some(assignee) = &task.assignee {
+                // Try to map the assignee to a GitHub username
+                let mapped_value = if let Ok(agent_mapping) = self.load_agent_mapping() {
+                    agent_mapping.get(assignee).cloned().unwrap_or_else(|| assignee.clone())
+                } else {
+                    assignee.clone()
+                };
+                
                 github_fields.insert(
                     mapping.github_field.clone(),
-                    Value::String(assignee.clone()),
+                    Value::String(mapped_value),
                 );
             }
         }
@@ -476,8 +483,17 @@ impl FieldManager {
 
         let mut mapping = std::collections::HashMap::new();
 
-        // Extract agent mappings
-        if let Some(agents) = config["agentMapping"]["agents"].as_object() {
+        // Support multiple formats for agent mappings
+        // Format 1: Simple flat mapping (new format)
+        if let Some(mappings) = config["agent_mappings"].as_object() {
+            for (agent_id, value) in mappings {
+                if let Some(github_username) = value.as_str() {
+                    mapping.insert(agent_id.clone(), github_username.to_string());
+                }
+            }
+        }
+        // Format 2: Nested format (legacy)
+        else if let Some(agents) = config["agentMapping"]["agents"].as_object() {
             for (agent_id, agent_data) in agents {
                 if let Some(github_username) = agent_data["githubUsername"].as_str() {
                     mapping.insert(agent_id.clone(), github_username.to_string());

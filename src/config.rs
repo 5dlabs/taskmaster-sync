@@ -7,7 +7,7 @@
 //! - Sync preferences and options
 
 use crate::error::{Result, TaskMasterError};
-use crate::models::config::{ProjectMapping, SubtaskMode, SyncConfig};
+use crate::models::config::{ProjectMapping, SyncConfig};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -108,17 +108,8 @@ impl ConfigManager {
     }
 
     /// Adds or updates a project mapping
-    pub fn add_project_mapping(&mut self, tag: &str, project_number: i32, project_id: String) {
-        self.config.project_mappings.insert(
-            tag.to_string(),
-            ProjectMapping {
-                project_number,
-                project_id,
-                repository: None,
-                subtask_mode: SubtaskMode::default(),
-                field_mappings: None,
-            },
-        );
+    pub fn add_project_mapping(&mut self, tag: String, mapping: ProjectMapping) {
+        self.config.project_mappings.insert(tag, mapping);
     }
 
     /// Updates last sync time for a tag

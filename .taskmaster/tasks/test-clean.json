@@ -1,0 +1,35 @@
+{
+  "test": {
+    "tasks": [
+      {
+        "id": "clean-test-001",
+        "title": "Clean Test Task with Agent",
+        "description": "Test task to verify Agent field mapping works correctly",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "This task should have Agent field populated with swe-1-5dlabs",
+        "testStrategy": "Manual verification in GitHub UI",
+        "subtasks": [],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "clean-test-002", 
+        "title": "Clean Test Task No Agent",
+        "description": "Test task with no assignee to verify Agent field is empty",
+        "status": "todo",
+        "priority": "low",
+        "dependencies": [],
+        "details": "This task should have no Agent field value",
+        "testStrategy": "Manual verification in GitHub UI",
+        "subtasks": [],
+        "assignee": null
+      }
+    ],
+    "metadata": {
+      "created": "2025-06-29T18:00:00Z",
+      "updated": "2025-06-29T18:00:00Z",
+      "description": "Clean test tasks for regression testing"
+    }
+  }
+}

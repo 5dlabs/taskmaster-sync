@@ -206,18 +206,17 @@ impl FieldManager {
             github_fields.insert(mapping.github_field.clone(), Value::String(status_value));
         }
 
-        // DISABLED FOR MVS: Map priority with option ID lookup
-        // if let Some(mapping) = self.field_mappings.get("priority") {
-        //     if let Some(priority) = &task.priority {
-        //         let priority_value =
-        //             if let Some(FieldTransformer::PriorityMapper) = &mapping.transformer {
-        //                 self.transform_priority(priority)?
-        //             } else {
-        //                 priority.clone()
-        //             };
-        //         github_fields.insert(mapping.github_field.clone(), Value::String(priority_value));
-        //     }
-        // }
+        // Map priority with option ID lookup
+        if let Some(mapping) = self.field_mappings.get("priority") {
+            if let Some(priority) = &task.priority {
+                let priority_value = if let Some(FieldTransformer::PriorityMapper) = &mapping.transformer {
+                    self.transform_priority(priority)?
+                } else {
+                    priority.clone()
+                };
+                github_fields.insert(mapping.github_field.clone(), Value::String(priority_value));
+            }
+        }
 
         // Map assignee to Agent field
         if let Some(mapping) = self.field_mappings.get("assignee") {
@@ -362,7 +361,7 @@ impl FieldManager {
                     project_id,
                     &field.id,
                     option_name,
-                    "#f0f0f0", // Default color
+                    "GRAY", // Default color - must be one of: GRAY, BLUE, GREEN, YELLOW, ORANGE, RED, PINK, PURPLE
                 )
                 .await?;
 
@@ -393,8 +392,8 @@ impl FieldManager {
             "in-progress" => "In Progress".to_string(),
             // Map review status to QA Review
             "review" | "qa" | "qa-review" => "QA Review".to_string(),
-            // done/completed should map to Done (fixed from previous logic)
-            "done" | "completed" => "Done".to_string(),
+            // done/completed should map to QA Review to enforce QA workflow
+            "done" | "completed" => "QA Review".to_string(),
             "blocked" => "Blocked".to_string(),
             _ => status.to_string(),
         })
@@ -418,6 +417,70 @@ impl FieldManager {
     /// Gets the GitHub field ID for a field name
     pub fn get_github_field_id(&self, field_name: &str) -> Option<String> {
         self.github_fields.get(field_name).map(|f| f.id.clone())
+    }
+
+    /// Determines GitHub assignee based on task data and status
+    /// Uses agent mapping configuration to convert TaskMaster assignees to GitHub usernames
+    pub fn get_github_assignee(&self, task: &Task) -> Option<String> {
+        // Load agent mapping from configuration
+        let mapping = self.load_agent_mapping().ok()?;
+        
+        let github_status = if let Some(FieldTransformer::StatusMapper) = 
+            self.field_mappings.get("status").and_then(|m| m.transformer.as_ref()) {
+            self.transform_status(&task.status).unwrap_or_else(|_| task.status.clone())
+        } else {
+            task.status.clone()
+        };
+
+        // For QA Review tasks, assign to QA team
+        if github_status == "QA Review" {
+            return mapping.get("qa").map(|u| u.to_string());
+        }
+
+        // For other tasks, map the TaskMaster assignee to GitHub username
+        if let Some(assignee) = &task.assignee {
+            // TaskMaster assignee format might be "swe-1-5dlabs" (already GitHub username)
+            // or could be "swe-1" (needs mapping)
+            
+            // Check if it's already a GitHub username (contains "5dlabs")
+            if assignee.contains("5dlabs") {
+                return Some(assignee.clone());
+            }
+            
+            // Try to map from agent mapping file
+            return mapping.get(assignee).map(|u| u.to_string());
+        }
+
+        None
+    }
+
+    /// Loads agent to GitHub username mapping from configuration
+    fn load_agent_mapping(&self) -> Result<std::collections::HashMap<String, String>> {
+        use std::fs;
+        
+        let mapping_path = ".taskmaster/agent-github-mapping.json";
+        let content = fs::read_to_string(mapping_path)
+            .map_err(|_| crate::error::TaskMasterError::ConfigError(
+                "Could not read agent mapping file".to_string()
+            ))?;
+        
+        let config: serde_json::Value = serde_json::from_str(&content)
+            .map_err(|_| crate::error::TaskMasterError::ConfigError(
+                "Invalid agent mapping JSON".to_string()
+            ))?;
+        
+        let mut mapping = std::collections::HashMap::new();
+        
+        // Extract agent mappings
+        if let Some(agents) = config["agentMapping"]["agents"].as_object() {
+            for (agent_id, agent_data) in agents {
+                if let Some(github_username) = agent_data["githubUsername"].as_str() {
+                    mapping.insert(agent_id.clone(), github_username.to_string());
+                }
+            }
+        }
+        
+        Ok(mapping)
     }
 }
 
@@ -456,7 +519,7 @@ mod tests {
             "In Progress"
         );
         assert_eq!(manager.transform_status("review").unwrap(), "QA Review");
-        assert_eq!(manager.transform_status("done").unwrap(), "Done");
+        assert_eq!(manager.transform_status("done").unwrap(), "QA Review");
 
         // Test priority transformation
         assert_eq!(manager.transform_priority("high").unwrap(), "high");

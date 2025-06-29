@@ -104,6 +104,7 @@ async fn test_sync_engine_basic() -> Result<()> {
         direction: SyncDirection::ToGitHub,
         batch_size: 50,
         include_archived: false,
+        use_delta_sync: true,
     };
 
     let result = engine.sync("test", options.clone()).await?;
@@ -199,6 +200,7 @@ async fn test_sync_dry_run() -> Result<()> {
         direction: SyncDirection::ToGitHub,
         batch_size: 50,
         include_archived: false,
+        use_delta_sync: true,
     };
 
     let result = engine.sync("dry-run-test", options).await?;

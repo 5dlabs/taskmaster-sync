@@ -1,37 +1,44 @@
 {
   "task_mappings": {
-    "test-rest-api-assignee": "PVTI_lADOC8B7k84A8pYuzgcB_kY",
-    "rust-conversion-core": "PVTI_lADOC8B7k84A8pbqzgcB_6M",
-    "auto-project-discovery": "PVTI_lADOC8B7k84A8pYuzgcB_HA",
     "rust-github-integration": "PVTI_lADOC8B7k84A8pbqzgcCABQ",
     "intelligent-delta-sync": "PVTI_lADOC8B7k84A8pYuzgcB_IY",
     "rust-sync-engine": "PVTI_lADOC8B7k84A8pbqzgcCACo",
+    "test-assignee-fix": "PVTI_lADOC8B7k84A8pYuzgcB_HU",
+    "demo-enhanced-subtasks": "PVTI_lADOC8B7k84A8o3mzgcB598",
+    "auto-project-discovery": "PVTI_lADOC8B7k84A8pYuzgcB_HA",
+    "rust-real-issues": "PVTI_lADOC8B7k84A8pYuzgcB_GM",
     "rust-distribution": "PVTI_lADOC8B7k84A8pYuzgcB_Gs",
+    "rust-advanced-features": "PVTI_lADOC8B7k84A8pYuzgcB_GU",
+    "test-rest-api-assignee": "PVTI_lADOC8B7k84A8pYuzgcB_kY",
     "rust-data-models": "PVTI_lADOC8B7k84A8pbqzgcB_8k",
     "enhanced-subtask-demo": "PVTI_lADOC8B7k84A8pYuzgcB_G0",
-    "test-assignee-fix": "PVTI_lADOC8B7k84A8pYuzgcB_HU",
-    "status-mapping-workflow": "PVTI_lADOC8B7k84A8pYuzgcB_H0",
-    "demo-enhanced-subtasks": "PVTI_lADOC8B7k84A8o3mzgcB598",
-    "rust-real-issues": "PVTI_lADOC8B7k84A8pYuzgcB_GM",
-    "rust-advanced-features": "PVTI_lADOC8B7k84A8pYuzgcB_GU"
+    "rust-conversion-core": "PVTI_lADOC8B7k84A8pbqzgcB_6M",
+    "status-mapping-workflow": "PVTI_lADOC8B7k84A8pYuzgcB_H0"
   },
   "synced_tasks": [
+    "test-assignee-fix",
     "test-rest-api-assignee",
-    "rust-conversion-core",
-    "rust-github-integration",
-    "rust-real-issues",
     "intelligent-delta-sync",
-    "demo-enhanced-subtasks",
-    "enhanced-subtask-demo",
-    "rust-sync-engine",
     "status-mapping-workflow",
-    "rust-advanced-features",
-    "rust-distribution",
-    "rust-data-models",
+    "rust-real-issues",
     "auto-project-discovery",
-    "test-assignee-fix"
+    "rust-advanced-features",
+    "rust-conversion-core",
+    "rust-sync-engine",
+    "rust-data-models",
+    "enhanced-subtask-demo",
+    "rust-github-integration",
+    "demo-enhanced-subtasks",
+    "rust-distribution"
   ],
   "task_metadata": {
+    "auto-project-discovery": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_HA",
+      "draft_issue_id": "I_kwDOPDji_M694mb_",
+      "title": "Automatic Project Number Discovery",
+      "status": "pending",
+      "last_updated": 1751170624
+    },
     "rust-data-models": {
       "github_item_id": "PVTI_lADOC8B7k84A8pbqzgcB_8k",
       "draft_issue_id": "I_kwDOPDji_M694pyx",
@@ -39,19 +46,19 @@
       "status": "done",
       "last_updated": 1751171953
     },
-    "status-mapping-workflow": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_H0",
-      "draft_issue_id": "I_kwDOPDji_M694mdb",
-      "title": "Implement CTO/QA Controlled Status Workflow",
-      "status": "pending",
-      "last_updated": 1751170638
+    "test-rest-api-assignee": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_kY",
+      "draft_issue_id": "I_kwDOPDji_M694oYv",
+      "title": "Test REST API Assignee",
+      "status": "in-progress",
+      "last_updated": 1751171315
     },
-    "test-assignee-fix": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_HU",
-      "draft_issue_id": "I_kwDOPDji_M694mcm",
-      "title": "Test Assignee Fix",
-      "status": "pending",
-      "last_updated": 1751170629
+    "rust-real-issues": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_GM",
+      "draft_issue_id": "I_kwDOPDji_M694mZw",
+      "title": "Real GitHub Issues Integration",
+      "status": "done",
+      "last_updated": 1751170605
     },
     "rust-conversion-core": {
       "github_item_id": "PVTI_lADOC8B7k84A8pbqzgcB_6M",
@@ -60,12 +67,12 @@
       "status": "done",
       "last_updated": 1751171902
     },
-    "auto-project-discovery": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_HA",
-      "draft_issue_id": "I_kwDOPDji_M694mb_",
-      "title": "Automatic Project Number Discovery",
-      "status": "pending",
-      "last_updated": 1751170624
+    "rust-sync-engine": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pbqzgcCACo",
+      "draft_issue_id": "I_kwDOPDji_M694qPy",
+      "title": "Core Sync Engine Implementation",
+      "status": "done",
+      "last_updated": 1751172113
     },
     "enhanced-subtask-demo": {
       "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_G0",
@@ -81,27 +88,6 @@
       "status": "done",
       "last_updated": 1751172098
     },
-    "rust-sync-engine": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pbqzgcCACo",
-      "draft_issue_id": "I_kwDOPDji_M694qPy",
-      "title": "Core Sync Engine Implementation",
-      "status": "done",
-      "last_updated": 1751172113
-    },
-    "rust-distribution": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_Gs",
-      "draft_issue_id": "I_kwDOPDji_M694mbC",
-      "title": "Distribution and Release Setup",
-      "status": "pending",
-      "last_updated": 1751170615
-    },
-    "test-rest-api-assignee": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_kY",
-      "draft_issue_id": "I_kwDOPDji_M694oYv",
-      "title": "Test REST API Assignee",
-      "status": "in-progress",
-      "last_updated": 1751171315
-    },
     "rust-advanced-features": {
       "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_GU",
       "draft_issue_id": "I_kwDOPDji_M694mab",
@@ -116,6 +102,20 @@
       "status": "pending",
       "last_updated": 1751170643
     },
+    "status-mapping-workflow": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_H0",
+      "draft_issue_id": "I_kwDOPDji_M694mdb",
+      "title": "Implement CTO/QA Controlled Status Workflow",
+      "status": "pending",
+      "last_updated": 1751170638
+    },
+    "rust-distribution": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_Gs",
+      "draft_issue_id": "I_kwDOPDji_M694mbC",
+      "title": "Distribution and Release Setup",
+      "status": "pending",
+      "last_updated": 1751170615
+    },
     "demo-enhanced-subtasks": {
       "github_item_id": "PVTI_lADOC8B7k84A8o3mzgcB598",
       "draft_issue_id": "I_kwDOPDji_M694V4z",
@@ -123,12 +123,12 @@
       "status": "in-progress",
       "last_updated": 1751163081
     },
-    "rust-real-issues": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_GM",
-      "draft_issue_id": "I_kwDOPDji_M694mZw",
-      "title": "Real GitHub Issues Integration",
-      "status": "done",
-      "last_updated": 1751170605
+    "test-assignee-fix": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pYuzgcB_HU",
+      "draft_issue_id": "I_kwDOPDji_M694mcm",
+      "title": "Test Assignee Fix",
+      "status": "pending",
+      "last_updated": 1751170629
     }
   },
   "last_sync": 1751172113

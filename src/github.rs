@@ -70,7 +70,7 @@ impl GitHubAPI {
 
         let project = response["data"]["organization"]["projectV2"].clone();
 
-        serde_json::from_value(project).map_err(|e| TaskMasterError::JsonError(e))
+        serde_json::from_value(project).map_err(TaskMasterError::JsonError)
     }
 
     /// Lists all items in a project with pagination
@@ -288,8 +288,7 @@ impl GitHubAPI {
         let parts: Vec<&str> = repository.split('/').collect();
         if parts.len() != 2 {
             return Err(TaskMasterError::ConfigError(format!(
-                "Invalid repository format '{}'. Expected 'owner/name'",
-                repository
+                "Invalid repository format '{repository}'. Expected 'owner/name'"
             )));
         }
 
@@ -384,7 +383,7 @@ impl GitHubAPI {
         let repo_id = response["data"]["repository"]["id"]
             .as_str()
             .ok_or_else(|| {
-                TaskMasterError::GitHubError(format!("Repository {}/{} not found", owner, name))
+                TaskMasterError::GitHubError(format!("Repository {owner}/{name} not found"))
             })?
             .to_string();
 
@@ -610,8 +609,7 @@ impl GitHubAPI {
             }
             _ => {
                 return Err(TaskMasterError::InvalidTaskFormat(format!(
-                    "Unsupported field type: {}",
-                    data_type
+                    "Unsupported field type: {data_type}"
                 )))
             }
         };
@@ -681,7 +679,7 @@ impl GitHubAPI {
         all_options.push(serde_json::json!({
             "name": option_name,
             "color": color,
-            "description": format!("{} option", option_name)
+            "description": format!("{option_name} option")
         }));
 
         let mutation = r"
@@ -721,8 +719,7 @@ impl GitHubAPI {
         }
 
         Err(TaskMasterError::GitHubError(format!(
-            "Failed to create option '{}' for field",
-            option_name
+            "Failed to create option '{option_name}' for field"
         )))
     }
 
@@ -739,8 +736,7 @@ impl GitHubAPI {
             let parts: Vec<&str> = repo.split('/').collect();
             if parts.len() != 2 {
                 return Err(TaskMasterError::InvalidTaskFormat(format!(
-                    "Repository must be in format 'owner/repo', got '{}'",
-                    repo
+                    "Repository must be in format 'owner/repo', got '{repo}'"
                 )));
             }
             Some(self.get_repository_id(parts[0], parts[1]).await?)

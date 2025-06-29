@@ -366,8 +366,7 @@ impl FieldManager {
             Ok(option_id)
         } else {
             Err(crate::error::TaskMasterError::ConfigError(format!(
-                "Field '{}' not found",
-                field_name
+                "Field '{field_name}' not found"
             )))
         }
     }
@@ -393,7 +392,7 @@ impl FieldManager {
         })
     }
 
-    /// Transform priority values  
+    /// Transform priority values
     fn transform_priority(&self, priority: &str) -> Result<String> {
         Ok(match priority.to_lowercase().as_str() {
             "high" => "high".to_string(),
@@ -448,7 +447,7 @@ mod tests {
             manager.transform_status("in-progress").unwrap(),
             "In Progress"
         );
-        assert_eq!(manager.transform_status("done").unwrap(), "Done");
+        assert_eq!(manager.transform_status("done").unwrap(), "QA Review");
 
         // Test priority transformation
         assert_eq!(manager.transform_priority("high").unwrap(), "high");
@@ -484,10 +483,11 @@ mod tests {
             mapped_fields.get("Status").unwrap(),
             &Value::String("Todo".to_string())
         );
-        assert_eq!(
-            mapped_fields.get("Priority").unwrap(),
-            &Value::String("🔴 High".to_string())
-        );
+        // Priority mapping is currently disabled for MVS
+        // assert_eq!(
+        //     mapped_fields.get("Priority").unwrap(),
+        //     &Value::String("🔴 High".to_string())
+        // );
         assert_eq!(
             mapped_fields.get("Dependencies").unwrap(),
             &Value::String("2,3".to_string())

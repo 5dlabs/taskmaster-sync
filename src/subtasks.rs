@@ -42,6 +42,12 @@ pub struct SubtaskConfig {
     pub complexity_threshold: usize,
 }
 
+impl Default for SubtaskHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SubtaskHandler {
     /// Creates a new subtask handler
     pub fn new() -> Self {
@@ -85,6 +91,7 @@ impl SubtaskHandler {
     }
 
     /// Flattens a task hierarchy into a list
+    #[allow(clippy::only_used_in_recursion)]
     pub fn flatten_hierarchy(&self, nodes: Vec<TaskNode>) -> Vec<Task> {
         let mut tasks = Vec::new();
 
@@ -127,7 +134,7 @@ impl SubtaskHandler {
                     .insert(subtask.id.clone(), result.project_item_id.clone());
                 self.parent_child_map
                     .entry(task.id.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(subtask.id.clone());
 
                 results.push(result);
@@ -154,11 +161,11 @@ impl SubtaskHandler {
         body.push_str(&format!("\n\n**Parent Task:** {}", parent.title));
 
         if let Some(details) = &subtask.details {
-            body.push_str(&format!("\n\n## Details\n{}", details));
+            body.push_str(&format!("\n\n## Details\n{details}"));
         }
 
         if let Some(test_strategy) = &subtask.test_strategy {
-            body.push_str(&format!("\n\n## Test Strategy\n{}", test_strategy));
+            body.push_str(&format!("\n\n## Test Strategy\n{test_strategy}"));
         }
 
         // Extract assignees
@@ -240,7 +247,7 @@ impl SubtaskHandler {
     pub fn format_hierarchy_field(&self, task: &Task) -> String {
         let child_count = task.subtasks.len();
         if child_count > 0 {
-            format!("Parent task ({} subtasks)", child_count)
+            format!("Parent task ({child_count} subtasks)")
         } else if self.get_parent_id(&task.id).is_some() {
             "Subtask".to_string()
         } else {
@@ -327,7 +334,7 @@ mod utils {
     use super::*;
 
     /// Sorts tasks by hierarchy (parents before children)
-    pub fn sort_by_hierarchy(_tasks: &mut Vec<Task>) {
+    pub fn sort_by_hierarchy(_tasks: &mut [Task]) {
         todo!("Sort tasks so parents come before children")
     }
 

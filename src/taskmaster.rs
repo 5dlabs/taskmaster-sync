@@ -48,11 +48,11 @@ impl TaskMasterReader {
         // Read file content
         let content = fs::read_to_string(&self.tasks_path)
             .await
-            .map_err(|e| TaskMasterError::IoError(e))?;
+            .map_err(TaskMasterError::IoError)?;
 
         // Parse JSON
         let parsed: TaskmasterFile =
-            serde_json::from_str(&content).map_err(|e| TaskMasterError::JsonError(e))?;
+            serde_json::from_str(&content).map_err(TaskMasterError::JsonError)?;
 
         // Handle different formats
         let tasks_map = match parsed.tasks {
@@ -159,14 +159,13 @@ pub mod format {
 
     /// Formats tasks.json with proper indentation
     pub fn format_tasks_json(tasks_map: &HashMap<String, TaggedTasks>) -> Result<String> {
-        let json =
-            serde_json::to_string_pretty(tasks_map).map_err(|e| TaskMasterError::JsonError(e))?;
+        let json = serde_json::to_string_pretty(tasks_map).map_err(TaskMasterError::JsonError)?;
         Ok(json)
     }
 
     /// Parses raw JSON into tasks
     pub fn parse_tasks_json(content: &str) -> Result<TaskmasterFile> {
-        serde_json::from_str(content).map_err(|e| TaskMasterError::JsonError(e))
+        serde_json::from_str(content).map_err(TaskMasterError::JsonError)
     }
 
     /// Validates JSON structure
@@ -189,16 +188,14 @@ pub mod format {
         for (tag, tag_value) in obj {
             if !tag_value.is_object() {
                 return Err(TaskMasterError::InvalidTaskFormat(format!(
-                    "Tag '{}' must contain an object",
-                    tag
+                    "Tag '{tag}' must contain an object"
                 )));
             }
 
             let tag_obj = tag_value.as_object().unwrap();
             if !tag_obj.contains_key("tasks") || !tag_obj["tasks"].is_array() {
                 return Err(TaskMasterError::InvalidTaskFormat(format!(
-                    "Tag '{}' must contain a 'tasks' array",
-                    tag
+                    "Tag '{tag}' must contain a 'tasks' array"
                 )));
             }
         }

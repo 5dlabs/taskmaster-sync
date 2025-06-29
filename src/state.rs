@@ -66,15 +66,14 @@ impl StateTracker {
     /// Loads state from file
     async fn load_state(path: &Path) -> Result<SyncState> {
         let content = fs::read_to_string(path).await?;
-        let state = serde_json::from_str(&content).map_err(|e| TaskMasterError::JsonError(e))?;
+        let state = serde_json::from_str(&content).map_err(TaskMasterError::JsonError)?;
         Ok(state)
     }
 
     /// Saves state to file
     pub async fn save(&self) -> Result<()> {
         let state = self.state.read().await;
-        let content =
-            serde_json::to_string_pretty(&*state).map_err(|e| TaskMasterError::JsonError(e))?;
+        let content = serde_json::to_string_pretty(&*state).map_err(TaskMasterError::JsonError)?;
 
         // Ensure parent directory exists
         if let Some(parent) = self.state_file.parent() {

@@ -102,7 +102,7 @@ impl SyncEngine {
         let subtasks = SubtaskHandler::new();
 
         // Initialize state tracker
-        let state_file = PathBuf::from(".taskmaster").join(format!("sync-state-{}.json", tag));
+        let state_file = PathBuf::from(".taskmaster").join(format!("sync-state-{tag}.json"));
         let state = StateTracker::new(state_file).await?;
 
         // Get project
@@ -145,9 +145,9 @@ impl SyncEngine {
 
         // Load tasks for the tag
         let all_tasks = self.taskmaster.load_tasks().await?;
-        let tasks = all_tasks.get(tag).ok_or_else(|| {
-            TaskMasterError::InvalidTaskFormat(format!("Tag '{}' not found", tag))
-        })?;
+        let tasks = all_tasks
+            .get(tag)
+            .ok_or_else(|| TaskMasterError::InvalidTaskFormat(format!("Tag '{tag}' not found")))?;
         let tasks_clone = tasks.clone(); // Clone for later use
 
         // Sync custom fields to GitHub
@@ -175,7 +175,7 @@ impl SyncEngine {
             // Also track by title for duplicate detection
             title_to_github
                 .entry(item.title.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(item);
         }
 
@@ -224,8 +224,8 @@ impl SyncEngine {
                                     .await
                                 {
                                     errors.push(format!(
-                                        "Failed to delete removed task {}: {}",
-                                        task.id, e
+                                        "Failed to delete removed task {}: {e}",
+                                        task.id
                                     ));
                                 } else {
                                     deleted += 1;
@@ -266,9 +266,9 @@ impl SyncEngine {
             if let Some(github_item) = tm_id_to_github.get(&task.id) {
                 // Update existing item
                 if let Err(e) = self.update_github_item(task, github_item, &progress).await {
-                    errors.push(format!("Failed to update {}: {}", task.id, e));
+                    errors.push(format!("Failed to update {}: {e}", task.id));
                     progress
-                        .record_error(format!("Error updating {}: {}", task.id, e))
+                        .record_error(format!("Error updating {}: {e}", task.id))
                         .await;
                 } else {
                     updated += 1;
@@ -296,12 +296,11 @@ impl SyncEngine {
                             // Update the existing item
                             if let Err(e) = self.update_github_item(task, existing, &progress).await
                             {
-                                errors
-                                    .push(format!("Failed to update duplicate {}: {}", task.id, e));
+                                errors.push(format!("Failed to update duplicate {}: {e}", task.id));
                                 progress
                                     .record_error(format!(
-                                        "Error updating duplicate {}: {}",
-                                        task.id, e
+                                        "Error updating duplicate {}: {e}",
+                                        task.id
                                     ))
                                     .await;
                             } else {
@@ -339,7 +338,7 @@ impl SyncEngine {
                             .await?;
                     }
                     Err(e) => {
-                        errors.push(format!("Failed to create {}: {}", task.id, e));
+                        errors.push(format!("Failed to create {}: {e}", task.id));
                         progress
                             .record_error(format!("Error creating {}: {}", task.id, e))
                             .await;
@@ -363,16 +362,13 @@ impl SyncEngine {
                             .delete_project_item(&project_id, &github_item.id)
                             .await
                         {
-                            errors.push(format!(
-                                "Failed to delete orphaned item {}: {}",
-                                orphan_id, e
-                            ));
+                            errors.push(format!("Failed to delete orphaned item {orphan_id}: {e}"));
                         } else {
                             deleted += 1;
                             self.state.remove_task(&orphan_id).await?;
                         }
                     } else {
-                        println!("DRY RUN: Would delete orphaned item {}", orphan_id);
+                        println!("DRY RUN: Would delete orphaned item {orphan_id}");
                     }
                 }
             }
@@ -399,7 +395,7 @@ impl SyncEngine {
         if !errors.is_empty() {
             eprintln!("\nSync completed with {} errors:", errors.len());
             for error in &errors {
-                eprintln!("  - {}", error);
+                eprintln!("  - {error}");
             }
         }
 
@@ -451,7 +447,7 @@ impl SyncEngine {
 
         // Process subtasks - temporarily disabled for performance and to focus on main task sync
         // TODO: Re-enable optimized subtask processing after main task sync is perfected
-        if false && self.subtasks.is_enhanced_mode() && !task.subtasks.is_empty() {
+        if false {
             let repository = self
                 .project_mapping
                 .as_ref()
@@ -484,11 +480,11 @@ impl SyncEngine {
         // Update each field
         for (field_name, value) in field_values {
             tracing::debug!("Processing field: {} = {:?}", field_name, value);
-            println!("DEBUG: Processing field: {} = {:?}", field_name, value);
+            println!("DEBUG: Processing field: {field_name} = {value:?}");
 
             if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
                 tracing::debug!("Found field ID for {}: {}", field_name, field_id);
-                println!("DEBUG: Found field ID for {}: {}", field_name, field_id);
+                println!("DEBUG: Found field ID for {field_name}: {field_id}");
 
                 // Format value based on field type with option ID lookup for single select
                 let formatted_value = self
@@ -509,14 +505,14 @@ impl SyncEngine {
                 {
                     Ok(_) => {
                         tracing::debug!("Successfully updated field: {}", field_name);
-                        println!("DEBUG: Successfully updated field: {}", field_name);
+                        println!("DEBUG: Successfully updated field: {field_name}");
                         if field_name == "TM_ID" {
                             let _ = true; // tm_id_set tracking
                         }
                     }
                     Err(e) => {
                         tracing::error!("Failed to update field {}: {}", field_name, e);
-                        println!("ERROR: Failed to update field {}: {}", field_name, e);
+                        println!("ERROR: Failed to update field {field_name}: {e}");
                     }
                 }
 
@@ -586,7 +582,7 @@ impl SyncEngine {
                     sleep(Duration::from_millis(50)).await;
                 } else {
                     tracing::error!("Field {} not found even after refresh", field_name);
-                    println!("ERROR: Field {} not found even after refresh", field_name);
+                    println!("ERROR: Field {field_name} not found even after refresh");
                 }
             }
         }
@@ -757,11 +753,11 @@ impl SyncEngine {
         let mut body = task.description.clone();
 
         if let Some(details) = &task.details {
-            body.push_str(&format!("\n\n## Details\n{}", details));
+            body.push_str(&format!("\n\n## Details\n{details}"));
         }
 
         if let Some(test_strategy) = &task.test_strategy {
-            body.push_str(&format!("\n\n## Test Strategy\n{}", test_strategy));
+            body.push_str(&format!("\n\n## Test Strategy\n{test_strategy}"));
         }
 
         if !task.subtasks.is_empty() {
@@ -905,9 +901,8 @@ impl SyncEngine {
     fn extract_tm_id(&self, item: &ProjectItem) -> Option<String> {
         for field_value in &item.field_values {
             if field_value.field.name == "TM_ID" {
-                match &field_value.value {
-                    FieldValueContent::Text(tm_id) => return Some(tm_id.clone()),
-                    _ => {}
+                if let FieldValueContent::Text(tm_id) = &field_value.value {
+                    return Some(tm_id.clone());
                 }
             }
         }

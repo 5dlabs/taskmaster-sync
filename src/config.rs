@@ -38,12 +38,12 @@ impl ConfigManager {
 
         // Read the config file
         let content = fs::read_to_string(&self.config_path).await.map_err(|e| {
-            TaskMasterError::ConfigError(format!("Failed to read config file: {}", e))
+            TaskMasterError::ConfigError(format!("Failed to read config file: {e}"))
         })?;
 
         // Parse the JSON
         self.config = serde_json::from_str(&content).map_err(|e| {
-            TaskMasterError::ConfigError(format!("Failed to parse config JSON: {}", e))
+            TaskMasterError::ConfigError(format!("Failed to parse config JSON: {e}"))
         })?;
 
         Ok(())
@@ -54,18 +54,18 @@ impl ConfigManager {
         // Ensure parent directory exists
         if let Some(parent) = self.config_path.parent() {
             fs::create_dir_all(parent).await.map_err(|e| {
-                TaskMasterError::ConfigError(format!("Failed to create config directory: {}", e))
+                TaskMasterError::ConfigError(format!("Failed to create config directory: {e}"))
             })?;
         }
 
         // Serialize config to pretty JSON
         let content = serde_json::to_string_pretty(&self.config).map_err(|e| {
-            TaskMasterError::ConfigError(format!("Failed to serialize config: {}", e))
+            TaskMasterError::ConfigError(format!("Failed to serialize config: {e}"))
         })?;
 
         // Write to file
         fs::write(&self.config_path, content).await.map_err(|e| {
-            TaskMasterError::ConfigError(format!("Failed to write config file: {}", e))
+            TaskMasterError::ConfigError(format!("Failed to write config file: {e}"))
         })?;
 
         Ok(())
@@ -94,14 +94,12 @@ impl ConfigManager {
         for (tag, mapping) in &self.config.project_mappings {
             if mapping.project_id.is_empty() {
                 return Err(TaskMasterError::ConfigError(format!(
-                    "Project ID is missing for tag: {}",
-                    tag
+                    "Project ID is missing for tag: {tag}"
                 )));
             }
             if mapping.project_number <= 0 {
                 return Err(TaskMasterError::ConfigError(format!(
-                    "Invalid project number for tag: {}",
-                    tag
+                    "Invalid project number for tag: {tag}"
                 )));
             }
         }

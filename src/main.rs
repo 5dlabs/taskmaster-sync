@@ -1,6 +1,5 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use tracing_subscriber;
 
 #[derive(Parser)]
 #[command(name = "task-master-sync")]
@@ -110,7 +109,7 @@ async fn main() -> Result<()> {
             {
                 Ok(engine) => engine,
                 Err(e) => {
-                    eprintln!("Failed to initialize sync engine: {}", e);
+                    eprintln!("Failed to initialize sync engine: {e}");
                     std::process::exit(1);
                 }
             };
@@ -137,7 +136,7 @@ async fn main() -> Result<()> {
                     if !result.stats.errors.is_empty() {
                         println!("   Errors: {}", result.stats.errors.len());
                         for error in &result.stats.errors {
-                            eprintln!("     - {}", error);
+                            eprintln!("     - {error}");
                         }
                     }
 
@@ -146,7 +145,7 @@ async fn main() -> Result<()> {
                     }
                 }
                 Err(e) => {
-                    eprintln!("❌ Sync failed: {}", e);
+                    eprintln!("❌ Sync failed: {e}");
                     std::process::exit(1);
                 }
             }
@@ -181,7 +180,7 @@ async fn main() -> Result<()> {
             let project_number: i32 = match project.parse() {
                 Ok(num) => num,
                 Err(_) => {
-                    eprintln!("Invalid project number: {}", project);
+                    eprintln!("Invalid project number: {project}");
                     std::process::exit(1);
                 }
             };
@@ -192,7 +191,7 @@ async fn main() -> Result<()> {
             let project = match github_api.get_project(project_number).await {
                 Ok(p) => p,
                 Err(e) => {
-                    eprintln!("Failed to get project: {}", e);
+                    eprintln!("Failed to get project: {e}");
                     std::process::exit(1);
                 }
             };
@@ -201,7 +200,7 @@ async fn main() -> Result<()> {
             let items = match github_api.list_project_items(&project.id).await {
                 Ok(items) => items,
                 Err(e) => {
-                    eprintln!("Failed to list project items: {}", e);
+                    eprintln!("Failed to list project items: {e}");
                     std::process::exit(1);
                 }
             };
@@ -240,7 +239,7 @@ async fn main() -> Result<()> {
                     .push(item);
             }
 
-            println!("\n📊 Duplicate Analysis for Project #{}", project_number);
+            println!("\n📊 Duplicate Analysis for Project #{project_number}");
             println!("Total items: {}", items.len());
             println!("Items without TM_ID: {}", no_tm_id_items.len());
 
@@ -272,11 +271,11 @@ async fn main() -> Result<()> {
                 for (tm_id, items) in &tm_id_groups {
                     if items.len() > 1 {
                         for item in items.iter().skip(1) {
-                            println!("  Deleting duplicate of {}", tm_id);
+                            println!("  Deleting duplicate of {tm_id}");
                             if let Err(e) =
                                 github_api.delete_project_item(&project.id, &item.id).await
                             {
-                                eprintln!("    Failed to delete: {}", e);
+                                eprintln!("    Failed to delete: {e}");
                             }
                         }
                     }
@@ -288,7 +287,7 @@ async fn main() -> Result<()> {
                         // If there's another item with the same title that has a TM_ID, delete this one
                         let has_tm_id_version = title_items.iter().any(|i| {
                                 i.field_values.iter().any(|fv| {
-                                    fv.field.name == "TM_ID" && 
+                                    fv.field.name == "TM_ID" &&
                                     matches!(&fv.value, task_master_sync::models::github::FieldValueContent::Text(t) if !t.is_empty())
                                 })
                             });
@@ -298,7 +297,7 @@ async fn main() -> Result<()> {
                             if let Err(e) =
                                 github_api.delete_project_item(&project.id, &item.id).await
                             {
-                                eprintln!("    Failed to delete: {}", e);
+                                eprintln!("    Failed to delete: {e}");
                             }
                         }
                     }
@@ -322,7 +321,7 @@ async fn main() -> Result<()> {
             let github_api = GitHubAPI::new(org_name.clone());
 
             // Use provided repository or default to taskmaster-sync
-            let repo = repository.unwrap_or_else(|| format!("{}/taskmaster-sync", org_name));
+            let repo = repository.unwrap_or_else(|| format!("{org_name}/taskmaster-sync"));
 
             match github_api
                 .create_project(&title, description.as_deref(), Some(&repo))
@@ -347,19 +346,19 @@ async fn main() -> Result<()> {
                     println!("\n💡 Or add to your .taskmaster/sync-config.json:");
                     println!("{{");
                     println!("  \"version\": \"1.0.0\",");
-                    println!("  \"organization\": \"{}\",", org_name);
+                    println!("  \"organization\": \"{org_name}\",");
                     println!("  \"project_mappings\": {{");
                     println!("    \"master\": {{");
                     println!("      \"project_number\": {},", project.number);
                     println!("      \"project_id\": \"{}\",", project.id);
-                    println!("      \"repository\": \"{}\",", repo);
+                    println!("      \"repository\": \"{repo}\",");
                     println!("      \"subtask_mode\": \"nested\"");
                     println!("    }}");
                     println!("  }}");
                     println!("}}");
                 }
                 Err(e) => {
-                    eprintln!("❌ Failed to create project: {}", e);
+                    eprintln!("❌ Failed to create project: {e}");
                     std::process::exit(1);
                 }
             }
@@ -384,7 +383,7 @@ async fn main() -> Result<()> {
                     project
                 }
                 Err(e) => {
-                    eprintln!("❌ Failed to get project #{}: {}", project_number, e);
+                    eprintln!("❌ Failed to get project #{project_number}: {e}");
                     std::process::exit(1);
                 }
             };
@@ -399,7 +398,7 @@ async fn main() -> Result<()> {
             {
                 Ok(_) => println!("✅ Required fields created successfully"),
                 Err(e) => {
-                    eprintln!("❌ Failed to create required fields: {}", e);
+                    eprintln!("❌ Failed to create required fields: {e}");
                     std::process::exit(1);
                 }
             }
@@ -408,7 +407,7 @@ async fn main() -> Result<()> {
             let fields = match github_api.get_project_fields(&project.id).await {
                 Ok(fields) => fields,
                 Err(e) => {
-                    eprintln!("❌ Failed to get project fields: {}", e);
+                    eprintln!("❌ Failed to get project fields: {e}");
                     std::process::exit(1);
                 }
             };
@@ -430,8 +429,7 @@ async fn main() -> Result<()> {
                         Ok(_) => println!("✅ QA Review status option added successfully"),
                         Err(e) => {
                             println!(
-                                "⚠️  Warning: Could not add QA Review option automatically: {}",
-                                e
+                                "⚠️  Warning: Could not add QA Review option automatically: {e}"
                             );
                             println!(
                                 "   Please add 'QA Review' status option manually in GitHub UI"
@@ -446,10 +444,7 @@ async fn main() -> Result<()> {
             }
 
             println!("\n✅ Project setup complete!");
-            println!(
-                "🚀 Ready to sync: task-master-sync sync master {}",
-                project_number
-            );
+            println!("🚀 Ready to sync: task-master-sync sync master {project_number}");
         }
     }
 

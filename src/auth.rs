@@ -52,12 +52,12 @@ impl GitHubAuth {
             .output()
             .await
             .map_err(|e| {
-                TaskMasterError::AuthError(format!("Failed to run gh auth status: {}", e))
+                TaskMasterError::AuthError(format!("Failed to run gh auth status: {e}"))
             })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
-        let combined = format!("{}{}", stdout, stderr);
+        let combined = format!("{stdout}{stderr}");
 
         // Parse the output to determine auth status
         if combined.contains("Logged in to github.com") {
@@ -90,14 +90,13 @@ impl GitHubAuth {
             .output()
             .await
             .map_err(|e| {
-                TaskMasterError::GitHubError(format!("Failed to execute gh command: {}", e))
+                TaskMasterError::GitHubError(format!("Failed to execute gh command: {e}"))
             })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(TaskMasterError::GitHubError(format!(
-                "GitHub CLI error: {}",
-                stderr
+                "GitHub CLI error: {stderr}"
             )));
         }
 
@@ -114,8 +113,7 @@ impl GitHubAuth {
             "variables": variables
         });
 
-        let json_input =
-            serde_json::to_string(&request).map_err(|e| TaskMasterError::JsonError(e))?;
+        let json_input = serde_json::to_string(&request).map_err(TaskMasterError::JsonError)?;
 
         // Create a child process with stdin piped
         let mut child = Command::new("sh")
@@ -126,32 +124,31 @@ impl GitHubAuth {
             .stderr(Stdio::piped())
             .spawn()
             .map_err(|e| {
-                TaskMasterError::GitHubError(format!("Failed to spawn gh command: {}", e))
+                TaskMasterError::GitHubError(format!("Failed to spawn gh command: {e}"))
             })?;
 
         // Write the JSON to stdin
         if let Some(mut stdin) = child.stdin.take() {
             use tokio::io::AsyncWriteExt;
             stdin.write_all(json_input.as_bytes()).await.map_err(|e| {
-                TaskMasterError::GitHubError(format!("Failed to write to stdin: {}", e))
+                TaskMasterError::GitHubError(format!("Failed to write to stdin: {e}"))
             })?;
         }
 
         // Wait for the command to complete
         let output = child.wait_with_output().await.map_err(|e| {
-            TaskMasterError::GitHubError(format!("Failed to execute GraphQL query: {}", e))
+            TaskMasterError::GitHubError(format!("Failed to execute GraphQL query: {e}"))
         })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(TaskMasterError::GitHubError(format!(
-                "GraphQL query failed: {}",
-                stderr
+                "GraphQL query failed: {stderr}"
             )));
         }
 
         let response =
-            serde_json::from_slice(&output.stdout).map_err(|e| TaskMasterError::JsonError(e))?;
+            serde_json::from_slice(&output.stdout).map_err(TaskMasterError::JsonError)?;
 
         Ok(response)
     }
@@ -195,7 +192,7 @@ mod tests {
         let installed = GitHubAuth::is_gh_installed().await;
         // We can't assert true/false as it depends on the system
         // Just ensure the function runs without panic
-        println!("GitHub CLI installed: {}", installed);
+        println!("GitHub CLI installed: {installed}");
     }
 
     #[test]
@@ -214,7 +211,8 @@ mod tests {
         let output = "✓ Logged in to github.com account testuser (keyring)
 ✓ Git operations for github.com configured to use https protocol.
 ✓ Token: gho_************************************
-✓ Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo'";
+✓ Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo'
+";
 
         let scopes = GitHubAuth::extract_scopes(output);
         assert_eq!(scopes, vec!["admin:public_key", "gist", "read:org", "repo"]);

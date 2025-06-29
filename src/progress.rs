@@ -156,7 +156,7 @@ impl ProgressTracker {
 /// Convenience functions for progress messages
 pub mod messages {
     pub fn sync_starting(total: usize) -> String {
-        format!("Starting sync of {} tasks...", total)
+        format!("Starting sync of {total} tasks...")
     }
 
     pub fn sync_complete(_stats: &super::SyncStats) -> String {
@@ -164,11 +164,11 @@ pub mod messages {
     }
 
     pub fn task_processing(task_id: &str, title: &str) -> String {
-        format!("Processing task {}: {}", task_id, title)
+        format!("Processing task {task_id}: {title}")
     }
 
     pub fn batch_operation(operation: &str, count: usize) -> String {
-        format!("Batch {} {} items", operation, count)
+        format!("Batch {operation} {count} items")
     }
 }
 

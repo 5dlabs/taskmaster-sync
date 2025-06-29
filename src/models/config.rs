@@ -24,17 +24,12 @@ pub struct ProjectMapping {
     pub field_mappings: Option<HashMap<String, String>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum SubtaskMode {
-    Nested,   // Subtasks shown as checklists in parent task body
+    #[default]
+    Nested, // Subtasks shown as checklists in parent task body
     Separate, // Subtasks created as separate GitHub Project items
-}
-
-impl Default for SubtaskMode {
-    fn default() -> Self {
-        SubtaskMode::Nested
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

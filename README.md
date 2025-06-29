@@ -5,27 +5,31 @@ A high-performance Rust CLI tool that synchronizes [Taskmaster](https://github.c
 ## ✨ Features
 
 - 🚀 **High Performance** - Written in Rust for blazing-fast synchronization
-- 🔄 **Real-time Sync** - File watching with automatic synchronization
-- 📊 **GitHub Projects Integration** - Full support for GitHub Projects v2
+- 🔄 **Delta Sync** - Intelligent sync with state tracking to minimize API calls
+- 📊 **GitHub Projects Integration** - Full support for GitHub Projects v2 with custom fields
 - 🏷️ **Multi-tag Support** - Map different Taskmaster tags to different projects
-- 👥 **Agent Assignment** - Automatically assign tasks to team members based on service ownership
-- 📈 **Progress Tracking** - Visual progress bars and detailed status updates
-- 🎯 **Flexible Subtask Handling** - Display subtasks as checklists or separate items
-- 💾 **Zero Runtime Dependencies** - Single binary executable, no Node.js required
-- 🛡️ **Memory Safe** - Rust's ownership system prevents common bugs
-- ⚡ **Cross Platform** - Works on macOS, Linux, and Windows
+- 👥 **Agent Assignment** - Automatically assign tasks to team members
+- 📈 **Progress Tracking** - Visual progress bars and detailed sync statistics
+- 🎯 **Flexible Subtask Handling** - Preserves task hierarchies in GitHub
+- 💾 **Zero Runtime Dependencies** - Single binary executable
+- 🛡️ **Memory Safe** - Rust's ownership system ensures reliability
+- ⚡ **Cross Platform** - Native binaries for macOS and Linux
 
-## 🚧 Current Status
+## 🎉 Current Status
 
-**This project is currently under active development.** The Rust implementation provides a solid foundation with:
+**Version 0.0.1 Released!** The first release provides core functionality:
 
-- ✅ Complete CLI interface and command structure
-- ✅ Modular architecture ready for implementation
-- ✅ Proper error handling and logging framework
-- ✅ File watching infrastructure
-- ✅ GitHub API integration scaffolding
-- 🚧 Core sync functionality (in progress)
-- 🚧 Agent assignment system (in progress)
+- ✅ **Complete sync engine** with delta sync support
+- ✅ **GitHub Projects V2 API** integration
+- ✅ **Custom field mapping** (TM_ID, Agent, Status, Priority, etc.)
+- ✅ **Subtask hierarchy** support
+- ✅ **Configuration management** with project mappings
+- ✅ **Progress tracking** with detailed statistics
+- ✅ **Comprehensive error handling** and retry logic
+- ✅ **Project setup automation** with field creation
+- ✅ **Duplicate detection** and cleanup utilities
+- 🚧 Real-time file watching (coming in v0.1.0)
+- 🚧 Advanced agent assignment rules (coming in v0.1.0)
 
 ## 📋 Prerequisites
 
@@ -36,42 +40,42 @@ A high-performance Rust CLI tool that synchronizes [Taskmaster](https://github.c
 
 ## 🛠️ Installation
 
-### Option 1: Build from Source (Current)
+### Option 1: Download Pre-built Binary (Recommended)
 
-Since this is an active development project, building from source is currently the primary installation method:
+Download the latest release from [GitHub Releases](https://github.com/5dlabs/taskmaster-sync/releases/latest):
+
+```bash
+# macOS (Intel)
+curl -L https://github.com/5dlabs/taskmaster-sync/releases/download/v0.0.1/task-master-sync-darwin-x86_64.tar.gz | tar xz
+chmod +x task-master-sync
+sudo mv task-master-sync /usr/local/bin/
+
+# macOS (Apple Silicon)
+curl -L https://github.com/5dlabs/taskmaster-sync/releases/download/v0.0.1/task-master-sync-darwin-aarch64.tar.gz | tar xz
+chmod +x task-master-sync
+sudo mv task-master-sync /usr/local/bin/
+
+# Linux (x86_64)
+curl -L https://github.com/5dlabs/taskmaster-sync/releases/download/v0.0.1/task-master-sync-linux-x86_64.tar.gz | tar xz
+chmod +x task-master-sync
+sudo mv task-master-sync /usr/local/bin/
+```
+
+### Option 2: Build from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/task-master-sync
-cd task-master-sync
+git clone https://github.com/5dlabs/taskmaster-sync
+cd taskmaster-sync
 
 # Build release binary
 cargo build --release
 
-# The binary will be available at:
-./target/release/task-master-sync
-
-# Optionally install globally
+# Install globally
 sudo cp target/release/task-master-sync /usr/local/bin/
-```
 
-### Option 2: Future Release Binaries
-
-Pre-built binaries will be available for download once the implementation is complete:
-
-```bash
-# macOS (Intel)
-curl -L https://github.com/yourusername/task-master-sync/releases/latest/download/task-master-sync-macos-x64 -o task-master-sync
-
-# macOS (Apple Silicon)
-curl -L https://github.com/yourusername/task-master-sync/releases/latest/download/task-master-sync-macos-arm64 -o task-master-sync
-
-# Linux
-curl -L https://github.com/yourusername/task-master-sync/releases/latest/download/task-master-sync-linux-x64 -o task-master-sync
-
-# Make executable and install
-chmod +x task-master-sync
-sudo mv task-master-sync /usr/local/bin/
+# Or run directly
+./target/release/task-master-sync --help
 ```
 
 ## 🚀 Quick Start
@@ -81,20 +85,33 @@ sudo mv task-master-sync /usr/local/bin/
    gh auth login
    ```
 
-2. **Navigate to your Taskmaster project**:
+2. **Create and set up a GitHub Project**:
+   ```bash
+   # Create a new project
+   task-master-sync create-project "My TaskMaster Project" --org your-org
+   
+   # Set up required fields (replace 123 with your project number)
+   task-master-sync setup-project 123
+   ```
+
+3. **Navigate to your Taskmaster project**:
    ```bash
    cd your-taskmaster-project
    ls .taskmaster/tasks/tasks.json  # Verify tasks file exists
    ```
 
-3. **Sync tasks to GitHub Project**:
+4. **Sync tasks to GitHub Project**:
    ```bash
    task-master-sync sync master 123  # Replace 123 with your project number
    ```
 
-4. **Enable automatic sync** (recommended):
+5. **Monitor sync progress**:
    ```bash
-   task-master-sync watch master 123
+   # Check sync status
+   task-master-sync status
+   
+   # Clean up any duplicates
+   task-master-sync clean-duplicates 123 --delete
    ```
 
 ## 📖 Usage
@@ -103,22 +120,26 @@ sudo mv task-master-sync /usr/local/bin/
 
 ```bash
 # Sync specific tag to GitHub Project
-task-master-sync sync <TAG> <PROJECT_NUMBER>
+task-master-sync sync <TAG> <PROJECT_NUMBER> [--dry-run] [--full-sync]
 
-# Watch for changes and auto-sync
-task-master-sync watch <TAG> <PROJECT_NUMBER> [--debounce <MS>]
+# Create and set up a new GitHub Project
+task-master-sync create-project <TITLE> [--org <ORG>] [--description <DESC>]
+task-master-sync setup-project <PROJECT_NUMBER>
 
-# Show current sync status
+# Clean up duplicate items in a project
+task-master-sync clean-duplicates <PROJECT_NUMBER> [--delete]
+
+# Show current sync status (coming in v0.1.0)
 task-master-sync status [--project <PROJECT_NUMBER>]
 
-# List available Taskmaster tags
+# Watch for changes and auto-sync (coming in v0.1.0)
+task-master-sync watch <TAG> <PROJECT_NUMBER> [--debounce <MS>]
+
+# List available Taskmaster tags (coming in v0.1.0)
 task-master-sync list-tags
 
-# Configure project mappings
+# Configure project mappings (coming in v0.1.0)
 task-master-sync configure --project <PROJECT_NUMBER> --tag <TAG>
-
-# Create new GitHub Project
-task-master-sync create-project <TITLE> [--org <ORG>] [--description <DESC>] [--public]
 ```
 
 ### Sync Options
@@ -446,6 +467,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Written in Rust for reliability and performance
 - Inspired by the need for visual project management in AI-driven development
 
+## 📝 Release History
+
+### v0.0.1 (2025-06-29)
+- 🎉 **Initial Release**
+- ✅ Core sync engine with delta sync support
+- ✅ GitHub Projects V2 API integration
+- ✅ Custom field mapping (TM_ID, Agent, Status, Priority)
+- ✅ Subtask hierarchy preservation
+- ✅ Project creation and setup automation
+- ✅ Duplicate detection and cleanup
+- ✅ Comprehensive error handling
+- ✅ Cross-platform binaries (Linux, macOS)
+
+### Roadmap for v0.1.0
+- 🚧 Real-time file watching with auto-sync
+- 🚧 Advanced agent assignment rules
+- 🚧 Status command for sync monitoring
+- 🚧 Tag listing and management
+- 🚧 Interactive configuration wizard
+
 ## 🔗 Related Projects
 
 - [Taskmaster](https://github.com/taskmaster-ai/taskmaster) - AI-powered task management
@@ -454,4 +495,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Status**: 🚧 Under active development | **Version**: 0.1.0 | **Language**: Rust 🦀
+**Status**: ✅ Released | **Version**: 0.0.1 | **Language**: Rust 🦀 | **License**: MIT

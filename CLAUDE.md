@@ -164,6 +164,10 @@ src/
 - Environment variables for GitHub authentication
 - Cross-platform binary distribution
 
+### GitHub CLI Authentication Note
+
+**Important**: When working with GitHub CLI operations in this project, use Jonathan Julian's zsh profile for authentication. This ensures proper GitHub CLI access for all operations.
+
 ## Development Workflow
 
 ### Testing Commands

@@ -239,7 +239,7 @@
         "id": "rust-distribution",
         "title": "Distribution and Release Setup",
         "description": "Cross-platform builds, GitHub Actions, and release automation",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "rust-advanced-features"
@@ -251,7 +251,7 @@
             "id": "rust-cross-compilation",
             "title": "Set up cross-compilation",
             "description": "Build for multiple platforms",
-            "status": "pending",
+            "status": "done",
             "priority": "medium",
             "dependencies": [],
             "details": "Target Windows, macOS, Linux",
@@ -263,11 +263,62 @@
             "id": "rust-github-actions",
             "title": "Create release workflow",
             "description": "Automated releases via GitHub Actions",
-            "status": "pending",
+            "status": "done",
             "priority": "medium",
             "dependencies": [],
             "details": "Auto-build and release on tag push",
             "testStrategy": "Test workflow with pre-release",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "github-action-simplification",
+        "title": "Simplify GitHub Action with Auto-Create Project",
+        "description": "Enhance sync command to auto-create GitHub Project if it doesn't exist",
+        "status": "in-progress",
+        "priority": "high",
+        "dependencies": [
+          "rust-distribution"
+        ],
+        "details": "The sync command should check if project exists, create it with proper fields if needed, then proceed with normal sync. This eliminates manual project setup for GitHub Action users.",
+        "testStrategy": "Test with non-existent project number, verify project gets created with TM_ID, Agent, Priority fields and QA Review status option",
+        "subtasks": [
+          {
+            "id": "detect-missing-project",
+            "title": "Add project existence check to sync command",
+            "description": "Check if project exists before syncing",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Catch GraphQL errors when project not found",
+            "testStrategy": "Test with invalid project number",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "auto-create-project",
+            "title": "Auto-create project with required fields",
+            "description": "Create project and set up fields when missing",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": ["detect-missing-project"],
+            "details": "Create project, add TM_ID text field, Agent single-select field, Priority single-select field, add QA Review to Status",
+            "testStrategy": "Verify all fields created correctly",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "update-action-docs",
+            "title": "Update GitHub Action documentation",
+            "description": "Document simplified workflow without manual project creation",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": ["auto-create-project"],
+            "details": "Update TEST_AGENT_PROMPT.md and README to reflect auto-create capability",
+            "testStrategy": "Follow updated docs to verify workflow",
             "subtasks": [],
             "assignee": "swe-1-5dlabs"
           }

@@ -876,7 +876,7 @@ impl SyncEngine {
 
         // Check if this is a single select field that needs option ID
         match field_name {
-            "Priority" | "Status" => {
+            "Priority" | "Status" | "Agent" => {
                 // Try to get or create the option ID
                 match self
                     .fields

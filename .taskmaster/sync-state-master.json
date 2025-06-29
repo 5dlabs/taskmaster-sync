@@ -1,115 +1,47 @@
 {
   "task_mappings": {
-    "rust-distribution": "PVTI_lADOC8B7k84A8r4QzgcCp-c",
-    "demo-enhanced-subtasks": "PVTI_lADOC8B7k84A8o3mzgcB598",
-    "test-assignee-fix": "PVTI_lADOC8B7k84A8r4QzgcCp_k",
-    "rust-sync-engine": "PVTI_lADOC8B7k84A8r4QzgcCp9E",
-    "status-mapping-workflow": "PVTI_lADOC8B7k84A8r4QzgcCqAI",
-    "test-rest-api-assignee": "PVTI_lADOC8B7k84A8r4QzgcCp_4",
-    "rust-conversion-core": "PVTI_lADOC8B7k84A8pbqzgcB_6M",
-    "rust-github-integration": "PVTI_lADOC8B7k84A8r4QzgcCp84",
     "auto-project-discovery": "PVTI_lADOC8B7k84A8r4QzgcCp_U",
-    "enhanced-subtask-demo": "PVTI_lADOC8B7k84A8r4QzgcCp_I",
-    "rust-data-models": "PVTI_lADOC8B7k84A8r4QzgcCp7I",
-    "rust-advanced-features": "PVTI_lADOC8B7k84A8r4QzgcCp9g",
-    "rust-real-issues": "PVTI_lADOC8B7k84A8r4QzgcCp9U",
+    "rust-conversion-core": "PVTI_lADOC8B7k84A8pbqzgcB_6M",
+    "test-assignee-fix": "PVTI_lADOC8B7k84A8r4QzgcCp_k",
+    "status-mapping-workflow": "PVTI_lADOC8B7k84A8r4QzgcCqAI",
     "intelligent-delta-sync": "PVTI_lADOC8B7k84A8r4QzgcCqAQ",
-    "github-action-publishing": "PVTI_lADOC8B7k84A8r4QzgcCrcE"
+    "rust-data-models": "PVTI_lADOC8B7k84A8r4QzgcCp7I",
+    "demo-enhanced-subtasks": "PVTI_lADOC8B7k84A8o3mzgcB598",
+    "test-rest-api-assignee": "PVTI_lADOC8B7k84A8r4QzgcCp_4",
+    "rust-sync-engine": "PVTI_lADOC8B7k84A8r4QzgcCp9E",
+    "rust-distribution": "PVTI_lADOC8B7k84A8r4QzgcCp-c",
+    "rust-real-issues": "PVTI_lADOC8B7k84A8r4QzgcCp9U",
+    "github-action-publishing": "PVTI_lADOC8B7k84A8r4QzgcCrcE",
+    "rust-advanced-features": "PVTI_lADOC8B7k84A8r4QzgcCp9g",
+    "enhanced-subtask-demo": "PVTI_lADOC8B7k84A8r4QzgcCp_I",
+    "test-assignee-regression": "PVTI_lADOC8B7k84A8r4QzgcCs8U",
+    "rust-github-integration": "PVTI_lADOC8B7k84A8r4QzgcCp84"
   },
   "synced_tasks": [
-    "github-action-publishing",
-    "rust-advanced-features",
-    "enhanced-subtask-demo",
-    "rust-data-models",
-    "rust-github-integration",
-    "intelligent-delta-sync",
-    "rust-distribution",
-    "rust-real-issues",
-    "auto-project-discovery",
-    "status-mapping-workflow",
-    "demo-enhanced-subtasks",
     "test-assignee-fix",
-    "rust-conversion-core",
+    "rust-distribution",
+    "auto-project-discovery",
+    "enhanced-subtask-demo",
+    "test-rest-api-assignee",
     "rust-sync-engine",
-    "test-rest-api-assignee"
+    "github-action-publishing",
+    "demo-enhanced-subtasks",
+    "rust-github-integration",
+    "rust-real-issues",
+    "test-assignee-regression",
+    "rust-data-models",
+    "intelligent-delta-sync",
+    "status-mapping-workflow",
+    "rust-advanced-features",
+    "rust-conversion-core"
   ],
   "task_metadata": {
-    "rust-real-issues": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp9U",
-      "draft_issue_id": "I_kwDOPDji_M696-Vz",
-      "title": "Real GitHub Issues Integration",
-      "status": "done",
-      "last_updated": 1751215935
-    },
     "rust-data-models": {
       "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp7I",
       "draft_issue_id": "I_kwDOPDji_M696-Qv",
       "title": "Data Models Implementation",
       "status": "done",
       "last_updated": 1751215919
-    },
-    "auto-project-discovery": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp_U",
-      "draft_issue_id": "I_kwDOPDji_M696-cP",
-      "title": "Automatic Project Number Discovery",
-      "status": "pending",
-      "last_updated": 1751215955
-    },
-    "rust-advanced-features": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp9g",
-      "draft_issue_id": "I_kwDOPDji_M696-XU",
-      "title": "Advanced Features Implementation",
-      "status": "pending",
-      "last_updated": 1751215940
-    },
-    "test-rest-api-assignee": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp_4",
-      "draft_issue_id": "I_kwDOPDji_M696-ey",
-      "title": "Test REST API Assignee",
-      "status": "in-progress",
-      "last_updated": 1751215964
-    },
-    "github-action-publishing": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCrcE",
-      "draft_issue_id": "I_kwDOPDji_M697Cxi",
-      "title": "Publish taskmaster-sync as a GitHub Action",
-      "status": "pending",
-      "last_updated": 1751217207
-    },
-    "demo-enhanced-subtasks": {
-      "github_item_id": "PVTI_lADOC8B7k84A8o3mzgcB598",
-      "draft_issue_id": "I_kwDOPDji_M694V4z",
-      "title": "Enhanced Subtask Demonstration",
-      "status": "in-progress",
-      "last_updated": 1751163081
-    },
-    "rust-sync-engine": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp9E",
-      "draft_issue_id": "I_kwDOPDji_M696-UV",
-      "title": "Core Sync Engine Implementation",
-      "status": "done",
-      "last_updated": 1751215930
-    },
-    "rust-distribution": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp-c",
-      "draft_issue_id": "I_kwDOPDji_M696-ZR",
-      "title": "Distribution and Release Setup",
-      "status": "pending",
-      "last_updated": 1751215945
-    },
-    "test-assignee-fix": {
-      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp_k",
-      "draft_issue_id": "I_kwDOPDji_M696-dc",
-      "title": "Test Assignee Fix",
-      "status": "in-progress",
-      "last_updated": 1751215959
-    },
-    "rust-conversion-core": {
-      "github_item_id": "PVTI_lADOC8B7k84A8pbqzgcB_6M",
-      "draft_issue_id": "I_kwDOPDji_M694ptF",
-      "title": "Core Infrastructure Setup - DEBUG",
-      "status": "done",
-      "last_updated": 1751171902
     },
     "enhanced-subtask-demo": {
       "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp_I",
@@ -118,12 +50,40 @@
       "status": "in-progress",
       "last_updated": 1751215950
     },
+    "github-action-publishing": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCrcE",
+      "draft_issue_id": "I_kwDOPDji_M697Cxi",
+      "title": "Publish taskmaster-sync as a GitHub Action",
+      "status": "pending",
+      "last_updated": 1751217207
+    },
+    "test-rest-api-assignee": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp_4",
+      "draft_issue_id": "I_kwDOPDji_M696-ey",
+      "title": "Test REST API Assignee",
+      "status": "in-progress",
+      "last_updated": 1751215964
+    },
     "status-mapping-workflow": {
       "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCqAI",
       "draft_issue_id": "I_kwDOPDji_M696-gE",
       "title": "Implement CTO/QA Controlled Status Workflow",
       "status": "pending",
       "last_updated": 1751215969
+    },
+    "test-assignee-fix": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp_k",
+      "draft_issue_id": "I_kwDOPDji_M696-dc",
+      "title": "Test Assignee Fix",
+      "status": "in-progress",
+      "last_updated": 1751215959
+    },
+    "auto-project-discovery": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp_U",
+      "draft_issue_id": "I_kwDOPDji_M696-cP",
+      "title": "Automatic Project Number Discovery",
+      "status": "pending",
+      "last_updated": 1751215955
     },
     "intelligent-delta-sync": {
       "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCqAQ",
@@ -132,13 +92,62 @@
       "status": "pending",
       "last_updated": 1751215974
     },
+    "rust-advanced-features": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp9g",
+      "draft_issue_id": "I_kwDOPDji_M696-XU",
+      "title": "Advanced Features Implementation",
+      "status": "pending",
+      "last_updated": 1751215940
+    },
     "rust-github-integration": {
       "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp84",
       "draft_issue_id": "I_kwDOPDji_M696-Sb",
       "title": "GitHub API Integration",
       "status": "done",
       "last_updated": 1751215924
+    },
+    "rust-conversion-core": {
+      "github_item_id": "PVTI_lADOC8B7k84A8pbqzgcB_6M",
+      "draft_issue_id": "I_kwDOPDji_M694ptF",
+      "title": "Core Infrastructure Setup - DEBUG",
+      "status": "done",
+      "last_updated": 1751171902
+    },
+    "rust-distribution": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp-c",
+      "draft_issue_id": "I_kwDOPDji_M696-ZR",
+      "title": "Distribution and Release Setup",
+      "status": "pending",
+      "last_updated": 1751215945
+    },
+    "test-assignee-regression": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCs8U",
+      "draft_issue_id": "I_kwDOPDji_M697JIH",
+      "title": "Test Assignee Regression Task",
+      "status": "in-progress",
+      "last_updated": 1751218673
+    },
+    "rust-sync-engine": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp9E",
+      "draft_issue_id": "I_kwDOPDji_M696-UV",
+      "title": "Core Sync Engine Implementation",
+      "status": "done",
+      "last_updated": 1751215930
+    },
+    "rust-real-issues": {
+      "github_item_id": "PVTI_lADOC8B7k84A8r4QzgcCp9U",
+      "draft_issue_id": "I_kwDOPDji_M696-Vz",
+      "title": "Real GitHub Issues Integration",
+      "status": "done",
+      "last_updated": 1751215935
+    },
+    "demo-enhanced-subtasks": {
+      "github_item_id": "PVTI_lADOC8B7k84A8o3mzgcB598",
+      "draft_issue_id": "I_kwDOPDji_M694V4z",
+      "title": "Enhanced Subtask Demonstration",
+      "status": "in-progress",
+      "last_updated": 1751163081
     }
   },
-  "last_sync": 1751217207
+  "last_sync": 1751218673
 }

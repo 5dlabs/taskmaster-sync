@@ -647,6 +647,16 @@
         "testStrategy": "Test action locally using act, verify binary downloads work on all platforms, test in a real repository workflow, validate marketplace listing appears correctly",
         "subtasks": [],
         "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "test-assignee-regression",
+        "title": "Test Assignee Regression Task",
+        "description": "Testing that assignees sync correctly to Agent field - UPDATED",
+        "status": "in-progress",
+        "priority": "low",
+        "dependencies": [],
+        "subtasks": [],
+        "assignee": "qa0-5dlabs"
       }
     ],
     "metadata": {

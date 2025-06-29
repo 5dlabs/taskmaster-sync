@@ -31,6 +31,9 @@ enum Commands {
         /// Force full sync instead of delta sync
         #[arg(long)]
         full_sync: bool,
+        /// Output results in JSON format
+        #[arg(long)]
+        json: bool,
     },
     /// Watch for changes and auto-sync
     Watch {
@@ -95,6 +98,7 @@ async fn main() -> Result<()> {
             subtasks_as_items: _,
             subtasks_in_body: _,
             full_sync,
+            json,
         } => {
             tracing::info!("Syncing tag '{}' to project '{}'", tag, project);
 
@@ -127,25 +131,51 @@ async fn main() -> Result<()> {
             // Run sync
             match sync_engine.sync(&tag, options).await {
                 Ok(result) => {
-                    println!("\n✅ Sync completed successfully!");
-                    println!("   Created: {}", result.stats.created);
-                    println!("   Updated: {}", result.stats.updated);
-                    println!("   Deleted: {}", result.stats.deleted);
-                    println!("   Skipped: {}", result.stats.skipped);
+                    if json {
+                        // Output JSON for GitHub Actions
+                        let json_output = serde_json::json!({
+                            "success": true,
+                            "stats": {
+                                "created": result.stats.created,
+                                "updated": result.stats.updated,
+                                "deleted": result.stats.deleted,
+                                "skipped": result.stats.skipped,
+                                "errors": result.stats.errors,
+                                "total_tasks": result.stats.total_tasks
+                            },
+                            "dry_run": dry_run
+                        });
+                        println!("{}", serde_json::to_string(&json_output).unwrap());
+                    } else {
+                        // Human-readable output
+                        println!("\n✅ Sync completed successfully!");
+                        println!("   Created: {}", result.stats.created);
+                        println!("   Updated: {}", result.stats.updated);
+                        println!("   Deleted: {}", result.stats.deleted);
+                        println!("   Skipped: {}", result.stats.skipped);
 
-                    if !result.stats.errors.is_empty() {
-                        println!("   Errors: {}", result.stats.errors.len());
-                        for error in &result.stats.errors {
-                            eprintln!("     - {error}");
+                        if !result.stats.errors.is_empty() {
+                            println!("   Errors: {}", result.stats.errors.len());
+                            for error in &result.stats.errors {
+                                eprintln!("     - {error}");
+                            }
                         }
-                    }
 
-                    if dry_run {
-                        println!("\n🔍 This was a dry run - no changes were made to GitHub");
+                        if dry_run {
+                            println!("\n🔍 This was a dry run - no changes were made to GitHub");
+                        }
                     }
                 }
                 Err(e) => {
-                    eprintln!("❌ Sync failed: {e}");
+                    if json {
+                        let json_output = serde_json::json!({
+                            "success": false,
+                            "error": e.to_string()
+                        });
+                        println!("{}", serde_json::to_string(&json_output).unwrap());
+                    } else {
+                        eprintln!("❌ Sync failed: {e}");
+                    }
                     std::process::exit(1);
                 }
             }

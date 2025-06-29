@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
 
     // Initialize logging - but check if we're in JSON mode first
     let suppress_logs = matches!(&cli.command, Commands::Sync { json: true, .. });
-    
+
     if !suppress_logs {
         let log_level = if cli.verbose { "debug" } else { "info" };
         tracing_subscriber::fmt().with_env_filter(log_level).init();
@@ -143,7 +143,7 @@ async fn main() -> Result<()> {
                 batch_size: 50,
                 include_archived: false,
                 use_delta_sync: !full_sync, // Use delta sync unless full sync is forced
-                quiet: json, // Suppress output in JSON mode
+                quiet: json,                // Suppress output in JSON mode
             };
 
             // Run sync

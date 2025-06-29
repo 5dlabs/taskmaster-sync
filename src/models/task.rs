@@ -55,23 +55,23 @@ where
 {
     use serde::de::{self, SeqAccess, Visitor};
     use serde_json::Value;
-    
+
     struct SubtasksVisitor;
-    
+
     impl<'de> Visitor<'de> for SubtasksVisitor {
         type Value = Vec<Task>;
-        
+
         fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
             formatter.write_str("an array of tasks or strings")
         }
-        
+
         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
         where
             A: SeqAccess<'de>,
         {
             let mut tasks = Vec::new();
             let mut idx = 0;
-            
+
             while let Some(value) = seq.next_element::<Value>()? {
                 match value {
                     Value::String(s) => {
@@ -91,8 +91,8 @@ where
                     }
                     Value::Object(_) => {
                         // Deserialize as a full Task
-                        let task: Task = serde_json::from_value(value)
-                            .map_err(de::Error::custom)?;
+                        let task: Task =
+                            serde_json::from_value(value).map_err(de::Error::custom)?;
                         tasks.push(task);
                     }
                     _ => {
@@ -101,10 +101,10 @@ where
                 }
                 idx += 1;
             }
-            
+
             Ok(tasks)
         }
     }
-    
+
     deserializer.deserialize_seq(SubtasksVisitor)
 }

@@ -384,9 +384,10 @@ impl FieldManager {
         Ok(match status.to_lowercase().as_str() {
             "pending" => "Todo".to_string(),
             "in-progress" => "In Progress".to_string(),
-            // Key change: done becomes QA Review instead of Done
-            // Only manual human intervention can set Done status
-            "done" | "completed" => "QA Review".to_string(),
+            // Map review status to QA Review
+            "review" | "qa" | "qa-review" => "QA Review".to_string(),
+            // done/completed should map to Done (fixed from previous logic)
+            "done" | "completed" => "Done".to_string(),
             "blocked" => "Blocked".to_string(),
             _ => status.to_string(),
         })
@@ -447,7 +448,8 @@ mod tests {
             manager.transform_status("in-progress").unwrap(),
             "In Progress"
         );
-        assert_eq!(manager.transform_status("done").unwrap(), "QA Review");
+        assert_eq!(manager.transform_status("review").unwrap(), "QA Review");
+        assert_eq!(manager.transform_status("done").unwrap(), "Done");
 
         // Test priority transformation
         assert_eq!(manager.transform_priority("high").unwrap(), "high");

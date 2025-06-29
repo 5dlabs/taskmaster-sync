@@ -1,0 +1,188 @@
+name: 'Taskmaster Sync'
+description: 'Synchronize TaskMaster tasks with GitHub Projects v2 - maintain your project management in code'
+author: '5dlabs'
+
+inputs:
+  config-path:
+    description: 'Path to sync configuration file'
+    required: false
+    default: '.taskmaster/sync-config.json'
+
+  tag:
+    description: 'TaskMaster tag to sync (defaults to current branch name or master)'
+    required: false
+    default: ''
+
+  project-number:
+    description: 'GitHub Project number (auto-detected from config if not specified)'
+    required: false
+    default: ''
+
+  direction:
+    description: 'Sync direction: to-github, from-github, or bidirectional'
+    required: false
+    default: 'to-github'
+
+  github-token:
+    description: 'GitHub token for authentication'
+    required: false
+    default: ${{ github.token }}
+
+  version:
+    description: 'Specific version of taskmaster-sync to use'
+    required: false
+    default: 'latest'
+
+  delta:
+    description: 'Use delta sync (only sync changed items)'
+    required: false
+    default: 'true'
+
+  force:
+    description: 'Force sync even if no changes detected'
+    required: false
+    default: 'false'
+
+outputs:
+  created:
+    description: 'Number of items created'
+    value: ${{ steps.sync.outputs.created }}
+
+  updated:
+    description: 'Number of items updated'
+    value: ${{ steps.sync.outputs.updated }}
+
+  deleted:
+    description: 'Number of items deleted'
+    value: ${{ steps.sync.outputs.deleted }}
+
+  skipped:
+    description: 'Number of items skipped'
+    value: ${{ steps.sync.outputs.skipped }}
+
+  errors:
+    description: 'Number of errors encountered'
+    value: ${{ steps.sync.outputs.errors }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up environment
+      shell: bash
+      run: |
+        # Auto-detect tag from branch name if not provided
+        if [ -z "${{ inputs.tag }}" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "SYNC_TAG=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+          else
+            echo "SYNC_TAG=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')" >> $GITHUB_ENV
+          fi
+        else
+          echo "SYNC_TAG=${{ inputs.tag }}" >> $GITHUB_ENV
+        fi
+
+    - name: Download taskmaster-sync
+      shell: bash
+      run: |
+        # Determine version
+        VERSION="${{ inputs.version }}"
+        if [ "$VERSION" = "latest" ]; then
+          VERSION=$(curl -s https://api.github.com/repos/5dlabs/taskmaster-sync/releases/latest | jq -r .tag_name)
+        fi
+
+        echo "Using taskmaster-sync version: $VERSION"
+
+        # Determine platform
+        case "${{ runner.os }}" in
+          Linux)
+            PLATFORM="linux-x64"
+            ;;
+          macOS)
+            PLATFORM="darwin-x64"
+            ;;
+          Windows)
+            PLATFORM="windows-x64"
+            EXT=".exe"
+            ;;
+          *)
+            echo "Unsupported platform: ${{ runner.os }}"
+            exit 1
+            ;;
+        esac
+
+        # Download binary
+        BINARY_NAME="taskmaster-sync-${PLATFORM}${EXT}"
+        DOWNLOAD_URL="https://github.com/5dlabs/taskmaster-sync/releases/download/${VERSION}/${BINARY_NAME}"
+
+        echo "Downloading from: $DOWNLOAD_URL"
+        curl -L -o taskmaster-sync${EXT} "$DOWNLOAD_URL"
+        chmod +x taskmaster-sync${EXT}
+
+        # Verify download
+        ./taskmaster-sync${EXT} --version
+
+    - name: Run sync
+      id: sync
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        # Build command
+        CMD="./taskmaster-sync sync"
+
+        # Add config if specified
+        if [ -n "${{ inputs.config-path }}" ] && [ -f "${{ inputs.config-path }}" ]; then
+          CMD="$CMD --config ${{ inputs.config-path }}"
+        fi
+
+        # Add tag
+        CMD="$CMD --tag $SYNC_TAG"
+
+        # Add project number if specified
+        if [ -n "${{ inputs.project-number }}" ]; then
+          CMD="$CMD --project ${{ inputs.project-number }}"
+        fi
+
+        # Add direction
+        CMD="$CMD --direction ${{ inputs.direction }}"
+
+        # Add delta flag
+        if [ "${{ inputs.delta }}" = "true" ]; then
+          CMD="$CMD --delta"
+        fi
+
+        # Add force flag
+        if [ "${{ inputs.force }}" = "true" ]; then
+          CMD="$CMD --force"
+        fi
+
+        # Add JSON output for parsing
+        CMD="$CMD --json"
+
+        echo "Running: $CMD"
+
+        # Run and capture output
+        OUTPUT=$($CMD) || {
+          echo "Sync failed with exit code $?"
+          echo "Output: $OUTPUT"
+          exit 1
+        }
+
+        # Parse JSON output for GitHub Actions outputs
+        echo "created=$(echo "$OUTPUT" | jq -r '.stats.created // 0')" >> $GITHUB_OUTPUT
+        echo "updated=$(echo "$OUTPUT" | jq -r '.stats.updated // 0')" >> $GITHUB_OUTPUT
+        echo "deleted=$(echo "$OUTPUT" | jq -r '.stats.deleted // 0')" >> $GITHUB_OUTPUT
+        echo "skipped=$(echo "$OUTPUT" | jq -r '.stats.skipped // 0')" >> $GITHUB_OUTPUT
+        echo "errors=$(echo "$OUTPUT" | jq -r '.stats.errors | length // 0')" >> $GITHUB_OUTPUT
+
+        # Print summary
+        echo "## Sync Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- Created: $(echo "$OUTPUT" | jq -r '.stats.created // 0')" >> $GITHUB_STEP_SUMMARY
+        echo "- Updated: $(echo "$OUTPUT" | jq -r '.stats.updated // 0')" >> $GITHUB_STEP_SUMMARY
+        echo "- Deleted: $(echo "$OUTPUT" | jq -r '.stats.deleted // 0')" >> $GITHUB_STEP_SUMMARY
+        echo "- Skipped: $(echo "$OUTPUT" | jq -r '.stats.skipped // 0')" >> $GITHUB_STEP_SUMMARY
+        echo "- Errors: $(echo "$OUTPUT" | jq -r '.stats.errors | length // 0')" >> $GITHUB_STEP_SUMMARY
+
+branding:
+  icon: 'refresh-cw'
+  color: 'blue'

@@ -200,7 +200,7 @@
         "id": "rust-advanced-features",
         "title": "Advanced Features Implementation",
         "description": "File watching, agent assignment, and other advanced features",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "rust-real-issues"

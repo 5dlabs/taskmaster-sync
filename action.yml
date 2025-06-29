@@ -14,7 +14,7 @@ inputs:
     default: ''
 
   project-number:
-    description: 'GitHub Project number (auto-detected from config if not specified)'
+    description: 'GitHub Project number (auto-detected from config if not specified, use 0 to auto-create)'
     required: false
     default: ''
 
@@ -48,6 +48,10 @@ outputs:
   errors:
     description: 'Number of errors encountered'
     value: ${{ steps.sync.outputs.errors }}
+  
+  project-number-used:
+    description: 'The actual project number used (useful when auto-created)'
+    value: ${{ steps.sync.outputs.project-number-used }}
 
 runs:
   using: 'composite'
@@ -147,9 +151,9 @@ runs:
         if [ -n "${{ inputs.project-number }}" ]; then
           PROJECT_ARG="${{ inputs.project-number }}"
         else
-          # Try to extract from config - for now just fail if not provided
-          echo "Error: project-number is required when not specified in config"
-          exit 1
+          # Use 0 to trigger auto-creation when not specified
+          echo "No project number specified, will auto-create new project..."
+          PROJECT_ARG="0"
         fi
 
         CMD="./task-master-sync sync $SYNC_TAG $PROJECT_ARG --json"
@@ -169,14 +173,24 @@ runs:
         echo "deleted=$(echo "$OUTPUT" | jq -r '.stats.deleted // 0')" >> $GITHUB_OUTPUT
         echo "skipped=$(echo "$OUTPUT" | jq -r '.stats.skipped // 0')" >> $GITHUB_OUTPUT
         echo "errors=$(echo "$OUTPUT" | jq -r '.stats.errors | length // 0')" >> $GITHUB_OUTPUT
+        echo "project-number-used=$(echo "$OUTPUT" | jq -r '.project_number // 0')" >> $GITHUB_OUTPUT
 
         # Print summary
-        echo "## Sync Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## TaskMaster Sync Summary" >> $GITHUB_STEP_SUMMARY
+        echo "**Project:** #$(echo "$OUTPUT" | jq -r '.project_number // 0')" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Statistics" >> $GITHUB_STEP_SUMMARY
         echo "- Created: $(echo "$OUTPUT" | jq -r '.stats.created // 0')" >> $GITHUB_STEP_SUMMARY
         echo "- Updated: $(echo "$OUTPUT" | jq -r '.stats.updated // 0')" >> $GITHUB_STEP_SUMMARY
         echo "- Deleted: $(echo "$OUTPUT" | jq -r '.stats.deleted // 0')" >> $GITHUB_STEP_SUMMARY
         echo "- Skipped: $(echo "$OUTPUT" | jq -r '.stats.skipped // 0')" >> $GITHUB_STEP_SUMMARY
         echo "- Errors: $(echo "$OUTPUT" | jq -r '.stats.errors | length // 0')" >> $GITHUB_STEP_SUMMARY
+        
+        # Add note if project was auto-created
+        if [ "$PROJECT_ARG" = "0" ] && [ "$(echo "$OUTPUT" | jq -r '.project_number // 0')" != "0" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✨ **New project auto-created!** Project number: $(echo "$OUTPUT" | jq -r '.project_number')" >> $GITHUB_STEP_SUMMARY
+        fi
 
 branding:
   icon: 'refresh-cw'

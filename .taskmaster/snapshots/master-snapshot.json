@@ -1,108 +1,15 @@
 {
   "tasks": {
-    "status-mapping-workflow": {
-      "id": "status-mapping-workflow",
-      "title": "Implement CTO/QA Controlled Status Workflow",
-      "status": "pending",
-      "priority": "high",
-      "assignee": "pm0-5dlabs",
-      "dependencies": [
-        "auto-project-discovery"
-      ],
-      "content_hash": "2bc89847f4e2bd2b0ee1e07ba737b6b0"
-    },
-    "rust-real-issues": {
-      "id": "rust-real-issues",
-      "title": "Real GitHub Issues Integration",
+    "rust-advanced-features": {
+      "id": "rust-advanced-features",
+      "title": "Advanced Features Implementation",
       "status": "done",
-      "priority": "high",
+      "priority": "medium",
       "assignee": "swe-2-5dlabs",
       "dependencies": [
-        "rust-sync-engine"
-      ],
-      "content_hash": "90997a927cff7c803f986047f20b9cff"
-    },
-    "rust-sync-engine": {
-      "id": "rust-sync-engine",
-      "title": "Core Sync Engine Implementation",
-      "status": "done",
-      "priority": "high",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [
-        "rust-github-integration"
-      ],
-      "content_hash": "268e7826511757098508366725d8b218"
-    },
-    "auto-project-discovery": {
-      "id": "auto-project-discovery",
-      "title": "Automatic Project Number Discovery",
-      "status": "pending",
-      "priority": "high",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [
         "rust-real-issues"
       ],
-      "content_hash": "8f43da5de5f106b1723b86169198acd0"
-    },
-    "test-assignee-regression": {
-      "id": "test-assignee-regression",
-      "title": "Test Assignee Regression Task",
-      "status": "in-progress",
-      "priority": "low",
-      "assignee": "qa0-5dlabs",
-      "dependencies": [],
-      "content_hash": "2006e8110d2f1a201b40dc7748ab4d5d"
-    },
-    "rust-github-integration": {
-      "id": "rust-github-integration",
-      "title": "GitHub API Integration",
-      "status": "done",
-      "priority": "high",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [
-        "rust-data-models"
-      ],
-      "content_hash": "24c9588539cff0cfe95b21a9b339e1e8"
-    },
-    "test-rest-api-assignee": {
-      "id": "test-rest-api-assignee",
-      "title": "Test REST API Assignee",
-      "status": "in-progress",
-      "priority": "medium",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [],
-      "content_hash": "20f291834ece4261bc2a42c3aed563e4"
-    },
-    "enhanced-subtask-demo": {
-      "id": "enhanced-subtask-demo",
-      "title": "Enhanced Subtask System Demo",
-      "status": "in-progress",
-      "priority": "medium",
-      "assignee": "pm0-5dlabs",
-      "dependencies": [
-        "rust-real-issues"
-      ],
-      "content_hash": "52419acc269aa5ce2d6bc212f5f3e116"
-    },
-    "rust-distribution": {
-      "id": "rust-distribution",
-      "title": "Distribution and Release Setup",
-      "status": "pending",
-      "priority": "medium",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [
-        "rust-advanced-features"
-      ],
-      "content_hash": "85349e2cd8612e9dca5559ec444131ac"
-    },
-    "rust-conversion-core": {
-      "id": "rust-conversion-core",
-      "title": "Core Infrastructure Setup",
-      "status": "done",
-      "priority": "high",
-      "assignee": "test-agent-new",
-      "dependencies": [],
-      "content_hash": "6e087377a64eab573c08033997abf168"
+      "content_hash": "4292ca398b3ea454d6dc05668841959c"
     },
     "rust-data-models": {
       "id": "rust-data-models",
@@ -115,16 +22,100 @@
       ],
       "content_hash": "998668a3de16ea061b6bbb5fa78dce8d"
     },
-    "rust-advanced-features": {
-      "id": "rust-advanced-features",
-      "title": "Advanced Features Implementation",
-      "status": "done",
+    "test-rest-api-assignee": {
+      "id": "test-rest-api-assignee",
+      "title": "Test REST API Assignee",
+      "status": "in-progress",
       "priority": "medium",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [],
+      "content_hash": "20f291834ece4261bc2a42c3aed563e4"
+    },
+    "test-assignee-regression": {
+      "id": "test-assignee-regression",
+      "title": "Test Assignee Regression Task",
+      "status": "in-progress",
+      "priority": "low",
+      "assignee": "qa0-5dlabs",
+      "dependencies": [],
+      "content_hash": "2006e8110d2f1a201b40dc7748ab4d5d"
+    },
+    "status-mapping-workflow": {
+      "id": "status-mapping-workflow",
+      "title": "Implement CTO/QA Controlled Status Workflow",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "pm0-5dlabs",
+      "dependencies": [
+        "auto-project-discovery"
+      ],
+      "content_hash": "2bc89847f4e2bd2b0ee1e07ba737b6b0"
+    },
+    "github-action-simplification": {
+      "id": "github-action-simplification",
+      "title": "Simplify GitHub Action with Auto-Create Project",
+      "status": "in-progress",
+      "priority": "high",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "rust-distribution"
+      ],
+      "content_hash": "1d5263629afed3d94485ecc8cd7238f8"
+    },
+    "intelligent-delta-sync": {
+      "id": "intelligent-delta-sync",
+      "title": "Implement Intelligent Delta Sync for Performance",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "auto-project-discovery"
+      ],
+      "content_hash": "1628bbe7affaea8246ef61bed4d5e580"
+    },
+    "rust-sync-engine": {
+      "id": "rust-sync-engine",
+      "title": "Core Sync Engine Implementation",
+      "status": "done",
+      "priority": "high",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "rust-github-integration"
+      ],
+      "content_hash": "268e7826511757098508366725d8b218"
+    },
+    "rust-real-issues": {
+      "id": "rust-real-issues",
+      "title": "Real GitHub Issues Integration",
+      "status": "done",
+      "priority": "high",
       "assignee": "swe-2-5dlabs",
+      "dependencies": [
+        "rust-sync-engine"
+      ],
+      "content_hash": "90997a927cff7c803f986047f20b9cff"
+    },
+    "enhanced-subtask-demo": {
+      "id": "enhanced-subtask-demo",
+      "title": "Enhanced Subtask System Demo",
+      "status": "in-progress",
+      "priority": "medium",
+      "assignee": "pm0-5dlabs",
       "dependencies": [
         "rust-real-issues"
       ],
-      "content_hash": "4292ca398b3ea454d6dc05668841959c"
+      "content_hash": "52419acc269aa5ce2d6bc212f5f3e116"
+    },
+    "auto-project-discovery": {
+      "id": "auto-project-discovery",
+      "title": "Automatic Project Number Discovery",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "rust-real-issues"
+      ],
+      "content_hash": "8f43da5de5f106b1723b86169198acd0"
     },
     "test-assignee-fix": {
       "id": "test-assignee-fix",
@@ -146,17 +137,37 @@
       ],
       "content_hash": "fd242ec737ddb87608ababac95661d31"
     },
-    "intelligent-delta-sync": {
-      "id": "intelligent-delta-sync",
-      "title": "Implement Intelligent Delta Sync for Performance",
-      "status": "pending",
+    "rust-github-integration": {
+      "id": "rust-github-integration",
+      "title": "GitHub API Integration",
+      "status": "done",
       "priority": "high",
       "assignee": "swe-1-5dlabs",
       "dependencies": [
-        "auto-project-discovery"
+        "rust-data-models"
       ],
-      "content_hash": "1628bbe7affaea8246ef61bed4d5e580"
+      "content_hash": "24c9588539cff0cfe95b21a9b339e1e8"
+    },
+    "rust-conversion-core": {
+      "id": "rust-conversion-core",
+      "title": "Core Infrastructure Setup",
+      "status": "done",
+      "priority": "high",
+      "assignee": "test-agent-new",
+      "dependencies": [],
+      "content_hash": "6e087377a64eab573c08033997abf168"
+    },
+    "rust-distribution": {
+      "id": "rust-distribution",
+      "title": "Distribution and Release Setup",
+      "status": "done",
+      "priority": "medium",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "rust-advanced-features"
+      ],
+      "content_hash": "85349e2cd8612e9dca5559ec444131ac"
     }
   },
-  "timestamp": "2025-06-29T19:34:02.182865Z"
+  "timestamp": "2025-06-29T22:30:24.783946Z"
 }

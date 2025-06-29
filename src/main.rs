@@ -135,6 +135,7 @@ async fn main() -> Result<()> {
                         // Output JSON for GitHub Actions
                         let json_output = serde_json::json!({
                             "success": true,
+                            "project_number": result.project_number,
                             "stats": {
                                 "created": result.stats.created,
                                 "updated": result.stats.updated,

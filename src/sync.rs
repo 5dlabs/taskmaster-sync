@@ -60,6 +60,7 @@ pub enum SyncDirection {
 pub struct SyncResult {
     pub stats: SyncStats,
     pub conflicts: Vec<SyncConflict>,
+    pub project_number: i32,
 }
 
 /// Represents a sync conflict
@@ -106,8 +107,86 @@ impl SyncEngine {
         let state_file = PathBuf::from(".taskmaster").join(format!("sync-state-{tag}.json"));
         let state = StateTracker::new(state_file).await?;
 
-        // Get project
-        let project = github.get_project(project_number).await?;
+        // Get or create project
+        let project = if project_number == 0 {
+            // Special case: 0 means auto-create
+            tracing::info!("Auto-creating new project...");
+            
+            // Determine project title from tag and config
+            let title = if let Some(mapping) = config.get_project_mapping(tag) {
+                format!("TaskMaster - {} ({})", mapping.repository.as_ref().map(|r| r.split('/').last().unwrap_or(tag)).unwrap_or(tag), tag)
+            } else {
+                format!("TaskMaster Project - {}", tag)
+            };
+            
+            let created_project = github.create_project(
+                &title,
+                Some("Auto-created by taskmaster-sync GitHub Action"),
+                config.get_project_mapping(tag).and_then(|m| m.repository.as_ref()).map(|s| s.as_str()),
+            ).await?;
+            
+            tracing::info!("Created project '{}' with number #{}", created_project.title, created_project.number);
+            println!("🎉 Created new GitHub Project: {} (#{}) ", created_project.title, created_project.number);
+            println!("   URL: {}", created_project.url);
+            
+            // Set up required fields
+            Self::setup_project_fields(&github, &created_project.id).await?;
+            
+            // Update config with the new project number
+            if let Some(mapping) = config.get_project_mapping_mut(tag) {
+                mapping.project_number = created_project.number;
+                mapping.project_id = created_project.id.clone();
+                config.save().await?;
+                println!("   ✅ Updated config with project number: {}", created_project.number);
+            }
+            
+            created_project
+        } else {
+            // Try to get existing project
+            match github.get_project(project_number).await {
+                Ok(p) => {
+                    tracing::info!("Found existing project #{}", project_number);
+                    p
+                }
+                Err(e) => {
+                    // Check if we should auto-create
+                    if std::env::var("TASKMASTER_AUTO_CREATE_PROJECT").unwrap_or_default() == "true" {
+                        tracing::info!("Project #{} not found, auto-creating new project...", project_number);
+                        
+                        let title = format!("TaskMaster Project - {}", tag);
+                        let created_project = github.create_project(
+                            &title,
+                            Some("Auto-created by taskmaster-sync"),
+                            config.get_project_mapping(tag).and_then(|m| m.repository.as_ref()).map(|s| s.as_str()),
+                        ).await?;
+                        
+                        tracing::info!("Created project '{}' with number #{}", created_project.title, created_project.number);
+                        println!("🎉 Created new GitHub Project: {} (#{})", created_project.title, created_project.number);
+                        println!("   Note: Requested project #{} was not available", project_number);
+                        
+                        // Set up required fields
+                        Self::setup_project_fields(&github, &created_project.id).await?;
+                        
+                        created_project
+                    } else {
+                        return Err(TaskMasterError::ConfigError(format!(
+                            "Project #{} not found. To auto-create a project:\n\
+                            \n\
+                            Option 1: Use project number '0' to auto-create:\n\
+                               task-master-sync sync {} 0\n\
+                            \n\
+                            Option 2: Set environment variable:\n\
+                               export TASKMASTER_AUTO_CREATE_PROJECT=true\n\
+                            \n\
+                            Option 3: Create manually:\n\
+                               task-master-sync create-project 'Project Name' --org {}\n\
+                               task-master-sync setup-project <PROJECT_NUMBER>",
+                            project_number, tag, org
+                        )));
+                    }
+                }
+            }
+        };
 
         // Get project mapping for repository info
         let project_mapping = config.get_project_mapping(tag).cloned();
@@ -404,6 +483,7 @@ impl SyncEngine {
         Ok(SyncResult {
             stats,
             conflicts: vec![],
+            project_number: self.project.as_ref().map(|p| p.number).unwrap_or(0),
         })
     }
 
@@ -964,6 +1044,38 @@ impl SyncEngine {
         // Verify GitHub authentication
         // The GitHub API client already handles this
 
+        Ok(())
+    }
+
+    /// Sets up required fields for a newly created project
+    async fn setup_project_fields(github_api: &GitHubAPI, project_id: &str) -> Result<()> {
+        tracing::info!("Setting up required fields for project");
+        
+        // Initialize field manager
+        let mut field_manager = FieldManager::new();
+        
+        // Create required custom fields
+        field_manager.sync_fields_to_github(github_api, project_id).await?;
+        
+        // Get the updated fields to find the Status field
+        let fields = github_api.get_project_fields(project_id).await?;
+        
+        // Find the Status field and add QA Review option
+        for field in fields {
+            if field.name == "Status" && field.data_type == "SINGLE_SELECT" {
+                if let Some(options) = &field.options {
+                    let has_qa_review = options.iter().any(|opt| opt.name == "QA Review");
+                    
+                    if !has_qa_review {
+                        tracing::info!("Adding 'QA Review' option to Status field");
+                        // Create the QA Review option (it will be inserted before "Done")
+                        github_api.create_field_option(project_id, &field.id, "QA Review", "YELLOW").await?;
+                    }
+                }
+            }
+        }
+        
+        tracing::info!("Project fields setup completed");
         Ok(())
     }
 }

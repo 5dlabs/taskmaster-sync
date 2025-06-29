@@ -174,6 +174,11 @@ impl ConfigManager {
         self.config.project_mappings.get(tag)
     }
 
+    /// Gets a mutable reference to project mapping for a tag
+    pub fn get_project_mapping_mut(&mut self, tag: &str) -> Option<&mut ProjectMapping> {
+        self.config.project_mappings.get_mut(tag)
+    }
+
     /// Sets the organization name
     pub fn set_organization(&mut self, org: String) {
         self.config.organization = org;

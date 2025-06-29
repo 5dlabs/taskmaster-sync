@@ -394,7 +394,7 @@ impl GitHubAPI {
     /// This method detects the content type and uses the appropriate mutation
     pub async fn update_project_item(
         &self,
-        project_id: &str,
+        _project_id: &str,
         item_id: &str,
         title: &str,
         body: &str,
@@ -415,8 +415,7 @@ impl GitHubAPI {
                 Ok(())
             }
             _ => Err(TaskMasterError::GitHubError(format!(
-                "Unknown content type '{}' for item {}",
-                content_type, item_id
+                "Unknown content type '{content_type}' for item {item_id}"
             ))),
         }
     }

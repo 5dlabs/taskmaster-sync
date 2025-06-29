@@ -621,7 +621,6 @@ impl SyncEngine {
                     );
                 } else {
                     tracing::info!("Emergency TM_ID update succeeded for: {}", task.id);
-                    tm_id_set = true;
                 }
             }
         }
@@ -651,7 +650,8 @@ impl SyncEngine {
 
             // Update GitHub assignees based on task status (for repository issues)
             if let Some(github_assignee) = self.fields.get_github_assignee(task) {
-                if let Err(e) = self.github
+                if let Err(e) = self
+                    .github
                     .update_issue_assignees(&draft_id, vec![github_assignee.clone()])
                     .await
                 {

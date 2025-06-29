@@ -1,22 +1,37 @@
 {
   "tasks": {
-    "test-rest-api-assignee": {
-      "id": "test-rest-api-assignee",
-      "title": "Test REST API Assignee",
-      "status": "in-progress",
-      "priority": "medium",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [],
-      "content_hash": "20f291834ece4261bc2a42c3aed563e4"
+    "status-mapping-workflow": {
+      "id": "status-mapping-workflow",
+      "title": "Implement CTO/QA Controlled Status Workflow",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "pm0-5dlabs",
+      "dependencies": [
+        "auto-project-discovery"
+      ],
+      "content_hash": "2bc89847f4e2bd2b0ee1e07ba737b6b0"
     },
-    "test-assignee-regression": {
-      "id": "test-assignee-regression",
-      "title": "Test Assignee Regression Task",
-      "status": "in-progress",
-      "priority": "low",
-      "assignee": "qa0-5dlabs",
-      "dependencies": [],
-      "content_hash": "2006e8110d2f1a201b40dc7748ab4d5d"
+    "rust-real-issues": {
+      "id": "rust-real-issues",
+      "title": "Real GitHub Issues Integration",
+      "status": "done",
+      "priority": "high",
+      "assignee": "swe-2-5dlabs",
+      "dependencies": [
+        "rust-sync-engine"
+      ],
+      "content_hash": "90997a927cff7c803f986047f20b9cff"
+    },
+    "rust-sync-engine": {
+      "id": "rust-sync-engine",
+      "title": "Core Sync Engine Implementation",
+      "status": "done",
+      "priority": "high",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "rust-github-integration"
+      ],
+      "content_hash": "268e7826511757098508366725d8b218"
     },
     "auto-project-discovery": {
       "id": "auto-project-discovery",
@@ -29,6 +44,35 @@
       ],
       "content_hash": "8f43da5de5f106b1723b86169198acd0"
     },
+    "test-assignee-regression": {
+      "id": "test-assignee-regression",
+      "title": "Test Assignee Regression Task",
+      "status": "in-progress",
+      "priority": "low",
+      "assignee": "qa0-5dlabs",
+      "dependencies": [],
+      "content_hash": "2006e8110d2f1a201b40dc7748ab4d5d"
+    },
+    "rust-github-integration": {
+      "id": "rust-github-integration",
+      "title": "GitHub API Integration",
+      "status": "done",
+      "priority": "high",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "rust-data-models"
+      ],
+      "content_hash": "24c9588539cff0cfe95b21a9b339e1e8"
+    },
+    "test-rest-api-assignee": {
+      "id": "test-rest-api-assignee",
+      "title": "Test REST API Assignee",
+      "status": "in-progress",
+      "priority": "medium",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [],
+      "content_hash": "20f291834ece4261bc2a42c3aed563e4"
+    },
     "enhanced-subtask-demo": {
       "id": "enhanced-subtask-demo",
       "title": "Enhanced Subtask System Demo",
@@ -39,28 +83,6 @@
         "rust-real-issues"
       ],
       "content_hash": "52419acc269aa5ce2d6bc212f5f3e116"
-    },
-    "github-action-publishing": {
-      "id": "github-action-publishing",
-      "title": "Publish taskmaster-sync as a GitHub Action",
-      "status": "pending",
-      "priority": "high",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [
-        "rust-distribution"
-      ],
-      "content_hash": "fd242ec737ddb87608ababac95661d31"
-    },
-    "status-mapping-workflow": {
-      "id": "status-mapping-workflow",
-      "title": "Implement CTO/QA Controlled Status Workflow",
-      "status": "pending",
-      "priority": "high",
-      "assignee": "pm0-5dlabs",
-      "dependencies": [
-        "auto-project-discovery"
-      ],
-      "content_hash": "2bc89847f4e2bd2b0ee1e07ba737b6b0"
     },
     "rust-distribution": {
       "id": "rust-distribution",
@@ -73,25 +95,14 @@
       ],
       "content_hash": "85349e2cd8612e9dca5559ec444131ac"
     },
-    "test-assignee-fix": {
-      "id": "test-assignee-fix",
-      "title": "Test Assignee Fix",
-      "status": "in-progress",
-      "priority": "low",
-      "assignee": "qa0-5dlabs",
-      "dependencies": [],
-      "content_hash": "e15db8767e7099f2425adeba67185f63"
-    },
-    "rust-real-issues": {
-      "id": "rust-real-issues",
-      "title": "Real GitHub Issues Integration",
+    "rust-conversion-core": {
+      "id": "rust-conversion-core",
+      "title": "Core Infrastructure Setup",
       "status": "done",
       "priority": "high",
-      "assignee": "swe-2-5dlabs",
-      "dependencies": [
-        "rust-sync-engine"
-      ],
-      "content_hash": "90997a927cff7c803f986047f20b9cff"
+      "assignee": "test-agent-new",
+      "dependencies": [],
+      "content_hash": "6e087377a64eab573c08033997abf168"
     },
     "rust-data-models": {
       "id": "rust-data-models",
@@ -115,6 +126,26 @@
       ],
       "content_hash": "4292ca398b3ea454d6dc05668841959c"
     },
+    "test-assignee-fix": {
+      "id": "test-assignee-fix",
+      "title": "Test Assignee Fix",
+      "status": "in-progress",
+      "priority": "low",
+      "assignee": "qa0-5dlabs",
+      "dependencies": [],
+      "content_hash": "e15db8767e7099f2425adeba67185f63"
+    },
+    "github-action-publishing": {
+      "id": "github-action-publishing",
+      "title": "Publish taskmaster-sync as a GitHub Action",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "swe-1-5dlabs",
+      "dependencies": [
+        "rust-distribution"
+      ],
+      "content_hash": "fd242ec737ddb87608ababac95661d31"
+    },
     "intelligent-delta-sync": {
       "id": "intelligent-delta-sync",
       "title": "Implement Intelligent Delta Sync for Performance",
@@ -125,38 +156,7 @@
         "auto-project-discovery"
       ],
       "content_hash": "1628bbe7affaea8246ef61bed4d5e580"
-    },
-    "rust-conversion-core": {
-      "id": "rust-conversion-core",
-      "title": "Core Infrastructure Setup",
-      "status": "done",
-      "priority": "high",
-      "assignee": "test-agent-new",
-      "dependencies": [],
-      "content_hash": "6e087377a64eab573c08033997abf168"
-    },
-    "rust-sync-engine": {
-      "id": "rust-sync-engine",
-      "title": "Core Sync Engine Implementation",
-      "status": "done",
-      "priority": "high",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [
-        "rust-github-integration"
-      ],
-      "content_hash": "268e7826511757098508366725d8b218"
-    },
-    "rust-github-integration": {
-      "id": "rust-github-integration",
-      "title": "GitHub API Integration",
-      "status": "done",
-      "priority": "high",
-      "assignee": "swe-1-5dlabs",
-      "dependencies": [
-        "rust-data-models"
-      ],
-      "content_hash": "24c9588539cff0cfe95b21a9b339e1e8"
     }
   },
-  "timestamp": "2025-06-29T19:03:26.218588Z"
+  "timestamp": "2025-06-29T19:34:02.182865Z"
 }

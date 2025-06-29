@@ -100,11 +100,11 @@ runs:
         DOWNLOAD_URL="https://github.com/5dlabs/taskmaster-sync/releases/download/${VERSION}/${BINARY_NAME}"
 
         echo "Downloading from: $DOWNLOAD_URL"
-        curl -L -o taskmaster-sync${EXT} "$DOWNLOAD_URL"
-        chmod +x taskmaster-sync${EXT}
+        curl -L -o task-master-sync${EXT} "$DOWNLOAD_URL"
+        chmod +x task-master-sync${EXT}
 
         # Verify download
-        ./taskmaster-sync${EXT} --version
+        ./task-master-sync${EXT} --version
 
     - name: Run sync
       id: sync
@@ -112,27 +112,16 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
-        # Build command
-        CMD="./taskmaster-sync sync"
-
-        # Add config if specified
-        if [ -n "${{ inputs.config-path }}" ] && [ -f "${{ inputs.config-path }}" ]; then
-          CMD="$CMD --config ${{ inputs.config-path }}"
-        fi
-
-        # Add tag
-        CMD="$CMD --tag $SYNC_TAG"
-
-        # Add project number if specified
+        # Build command with positional arguments
         if [ -n "${{ inputs.project-number }}" ]; then
-          CMD="$CMD --project ${{ inputs.project-number }}"
+          PROJECT_ARG="${{ inputs.project-number }}"
+        else
+          # Try to extract from config - for now just fail if not provided
+          echo "Error: project-number is required when not specified in config"
+          exit 1
         fi
 
-        # Always use delta sync (default behavior)
-        CMD="$CMD --direction to-github --delta"
-
-        # Add JSON output for parsing
-        CMD="$CMD --json"
+        CMD="./task-master-sync sync $SYNC_TAG $PROJECT_ARG --json"
 
         echo "Running: $CMD"
 

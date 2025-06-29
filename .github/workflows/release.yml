@@ -111,9 +111,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/${{ matrix.target }}/release/taskmaster-sync.exe ${{ matrix.name }}
+            cp target/${{ matrix.target }}/release/task-master-sync.exe ${{ matrix.name }}
           else
-            cp target/${{ matrix.target }}/release/taskmaster-sync ${{ matrix.name }}
+            cp target/${{ matrix.target }}/release/task-master-sync ${{ matrix.name }}
           fi
 
           # Make it executable on Unix

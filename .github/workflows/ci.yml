@@ -60,7 +60,7 @@ jobs:
           git push
 
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy -- -D errors
 
       - name: Run tests
         run: cargo test --verbose

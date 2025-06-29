@@ -1,0 +1,49 @@
+# Task ID: 6
+# Title: Create Custom GitHub Project Fields Manager
+# Status: pending
+# Dependencies: 4
+# Priority: medium
+# Description: Automatically create and manage required custom fields in GitHub Projects using Rust with strongly-typed structs, async API calls, and serde serialization
+# Details:
+Implement automatic creation of custom fields: TM_ID (text), Dependencies (text), and Test Strategy (text) using Rust structs with serde for field definitions. Use reqwest for async GitHub API calls with proper error handling. Implement strongly-typed field enums for validation, check for existing fields before creation, handle field type validation, and provide field mapping utilities. Support field updates and ensure proper permissions with comprehensive async error handling.
+
+# Test Strategy:
+Test async custom field creation with reqwest, test duplicate field handling with proper error responses, validate strongly-typed field enums and serde serialization/deserialization, test async field mapping functionality, and verify proper async error handling for API failures
+
+# Subtasks:
+## 1. Define Rust structs with serde for GitHub project field definitions [pending]
+### Dependencies: None
+### Description: Create strongly-typed structs for field definitions with serde serialization support
+### Details:
+
+
+## 2. Implement strongly-typed field enums for validation [pending]
+### Dependencies: None
+### Description: Create enums for field types (text, number, date, etc.) with validation logic
+### Details:
+
+
+## 3. Set up async GitHub API client using reqwest [pending]
+### Dependencies: None
+### Description: Configure reqwest client for async GitHub API calls with proper authentication and error handling
+### Details:
+
+
+## 4. Implement async field creation with duplicate checking [pending]
+### Dependencies: None
+### Description: Create async functions to check for existing fields and create new ones using GitHub API
+### Details:
+
+
+## 5. Add async field mapping utilities with serde support [pending]
+### Dependencies: None
+### Description: Implement utilities for mapping between internal field structs and GitHub API responses using serde
+### Details:
+
+
+## 6. Implement async field update functionality [pending]
+### Dependencies: None
+### Description: Add support for updating existing custom fields with proper async error handling
+### Details:
+
+

@@ -1,0 +1,49 @@
+# Task ID: 10
+# Title: Build Tag System Support
+# Status: pending
+# Dependencies: 5, 8
+# Priority: medium
+# Description: Implement support for Taskmaster's tag system for multi-context development using Rust with HashSet for efficient filtering
+# Details:
+Create tag detection and filtering system using Rust's HashSet for efficient tag operations. Implement tag parsing using the regex crate for robust pattern matching. Use serde for tag configuration serialization/deserialization. Support tag-to-project mapping from configuration. Support listing available tags and filtering tasks by tag during sync. Handle both tagged and untagged (legacy) formats seamlessly.
+
+# Test Strategy:
+Test HashSet-based tag filtering performance, validate regex-based tag parsing, test serde configuration serialization, verify tag-to-project mapping, test with both tagged and legacy formats, and verify tag listing functionality
+
+# Subtasks:
+## 1. Add required dependencies to Cargo.toml [pending]
+### Dependencies: None
+### Description: Add regex and serde dependencies for tag parsing and configuration handling
+### Details:
+
+
+## 2. Implement HashSet-based tag storage and filtering [pending]
+### Dependencies: None
+### Description: Create efficient tag filtering using HashSet data structure for O(1) lookups
+### Details:
+
+
+## 3. Implement regex-based tag parsing [pending]
+### Dependencies: None
+### Description: Use regex crate to parse tags from task content with robust pattern matching
+### Details:
+
+
+## 4. Create serde-based tag configuration [pending]
+### Dependencies: None
+### Description: Implement tag-to-project mapping configuration using serde for serialization
+### Details:
+
+
+## 5. Implement tag listing functionality [pending]
+### Dependencies: None
+### Description: Create function to list all available tags from HashSet storage
+### Details:
+
+
+## 6. Add legacy format compatibility [pending]
+### Dependencies: None
+### Description: Ensure seamless handling of both tagged and untagged task formats
+### Details:
+
+

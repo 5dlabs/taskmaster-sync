@@ -1,0 +1,69 @@
+[package]
+name = "task-master-sync"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name"]
+description = "Sync Taskmaster tasks to GitHub Projects"
+license = "MIT"
+repository = "https://github.com/yourusername/task-master-sync"
+keywords = ["taskmaster", "github", "sync", "project-management"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+# Core async runtime
+tokio = { version = "1.40", features = ["full"] }
+
+# CLI argument parsing
+clap = { version = "4.5", features = ["derive", "cargo", "env"] }
+
+# JSON handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# GitHub API (via GitHub CLI)
+tokio-process = "0.2"  # For executing gh CLI commands
+
+# HTTP client (optional, for direct API calls)
+reqwest = { version = "0.11", features = ["json"] }
+
+# GraphQL client (optional)
+graphql_client = "0.14"
+
+# File watching
+notify = { version = "6.1", features = ["serde"] }
+
+# Configuration management
+config = "0.14"
+directories = "5.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Progress bars
+indicatif = "0.17"
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Path handling
+pathdiff = "0.2"
+
+# Colored output
+colored = "2.1"
+
+# Base64 encoding (for GraphQL queries)
+base64 = "0.22"
+
+[dev-dependencies]
+tempfile = "3.10"
+mockall = "0.13"
+
+[profile.release]
+lto = true
+opt-level = 3
+strip = true

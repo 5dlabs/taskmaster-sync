@@ -1,0 +1,289 @@
+PRODUCT REQUIREMENTS DOCUMENT: TASK MASTER SYNC
+
+PROJECT OVERVIEW
+================
+Create a standalone Node.js utility called Task Master Sync that reads Taskmaster task files and synchronizes them to GitHub Projects for visual representation. This utility operates independently of Taskmaster to ensure compatibility with any version and provides a read-only, one-directional sync from Taskmaster to GitHub.
+
+PROBLEM STATEMENT
+=================
+Developers using Taskmaster for AI-driven task management need a visual representation of their tasks without constantly querying the AI model. GitHub Projects provides an excellent visual interface, but manually keeping it in sync with Taskmaster is time-consuming and error-prone. This utility automates that synchronization while maintaining Taskmaster as the single source of truth.
+
+TARGET USERS
+============
+- Individual developers using Taskmaster for project management
+- Small teams wanting to visualize Taskmaster tasks in GitHub Projects
+- Project managers needing a visual overview of AI-managed tasks
+- Developers working on multiple projects with different Taskmaster tags
+
+KEY OBJECTIVES
+==============
+1. Provide automatic, one-way synchronization from Taskmaster to GitHub Projects
+2. Support Taskmaster's tag system for multi-context development
+3. Maintain complete independence from Taskmaster's codebase
+4. Enable both manual and automated (cron) synchronization
+5. Preserve all Taskmaster task metadata in GitHub Projects
+
+FUNCTIONAL REQUIREMENTS
+=======================
+
+Core Synchronization Engine
+---------------------------
+- Read Taskmaster's tasks.json file without modification
+- Support both legacy and tagged Taskmaster formats
+- Create/update GitHub Project items via GraphQL API
+- Track synchronization state using custom TM_ID field
+- Handle task dependencies and subtasks appropriately
+- Provide two subtask display modes: nested (in parent body) and separate (as individual items)
+
+GitHub Integration
+------------------
+- Use GitHub CLI for authentication (no token management)
+- Automatically create required custom fields (TM_ID, Dependencies, Test Strategy)
+- Map Taskmaster fields to GitHub Project fields
+- Support pagination for large projects
+- Handle rate limiting gracefully
+
+Configuration Management
+------------------------
+- Store sync configuration in .taskmaster/sync-config.json
+- Track project mappings (tag → GitHub Project)
+- Remember last sync timestamp per tag
+- Support multiple tag-to-project mappings
+
+Error Handling
+--------------
+- Continue syncing remaining tasks if individual tasks fail
+- Provide detailed error logging
+- Validate GitHub authentication before sync
+- Handle missing or malformed Taskmaster files gracefully
+
+User Interface
+--------------
+- Simple command-line interface
+- Clear progress indicators during sync
+- Helpful error messages with resolution steps
+- List available Taskmaster tags
+- Show sync status and last sync time
+
+TECHNICAL REQUIREMENTS
+======================
+
+Technology Stack
+----------------
+- Node.js (compatible with LTS versions)
+- GitHub CLI for API access
+- No external npm dependencies initially
+- File system access for reading Taskmaster files
+- Child process execution for GitHub CLI calls
+
+File Structure
+--------------
+- task-master-sync.js: Main synchronization engine
+- setup-cron.sh: Automated sync setup script
+- logs/: Directory for sync operation logs
+- .taskmaster/sync-config.json: Utility configuration
+- CLAUDE.md: Project context for AI assistance
+- README.md: User documentation
+
+API Integration
+---------------
+- GitHub GraphQL API v4
+- Mutations: addProjectV2DraftIssue, updateProjectV2DraftIssue, updateProjectV2ItemFieldValue
+- Queries: organization.projectV2, node.items, node.fields
+- Custom field creation and management
+
+Performance Requirements
+------------------------
+- Sync 100 tasks in under 30 seconds
+- Handle projects with 1000+ items
+- Minimize API calls through batching where possible
+- Cache project structure between syncs
+
+NON-FUNCTIONAL REQUIREMENTS
+===========================
+
+Compatibility
+-------------
+- Work with any Taskmaster version (no direct integration)
+- Support macOS, Linux, and Windows (via WSL)
+- Compatible with GitHub Enterprise (configurable org)
+
+Reliability
+-----------
+- Never modify Taskmaster files
+- Graceful degradation on API errors
+- Atomic operations where possible
+- Clear rollback instructions if needed
+
+Usability
+---------
+- Zero configuration for basic usage
+- Intuitive command-line interface
+- Comprehensive error messages
+- Example commands in help text
+
+Security
+--------
+- Leverage GitHub CLI's secure authentication
+- No storage of credentials
+- Read-only access to Taskmaster files
+- Respect GitHub API rate limits
+
+IMPLEMENTATION PHASES
+=====================
+
+Phase 1: One-Way Sync (Current Scope)
+-------------------------------------
+- Basic sync engine implementation
+- GitHub Project item creation/update
+- Custom field management
+- Tag support
+- Subtask handling (both display modes)
+- Error handling and logging
+- Cron job setup script
+- Basic documentation
+
+Phase 2: Enhanced Features (Future)
+-----------------------------------
+- Bidirectional synchronization
+- Conflict detection and resolution
+- Webhook support for real-time updates
+- GitHub Actions integration
+- Advanced field mapping
+- Sync history and rollback
+
+CONSTRAINTS AND ASSUMPTIONS
+===========================
+
+Constraints
+-----------
+- Must not modify Taskmaster files
+- Must work without Taskmaster CLI installed
+- Limited by GitHub API rate limits
+- Requires GitHub CLI authentication
+
+Assumptions
+-----------
+- Users have GitHub CLI installed and authenticated
+- Taskmaster files follow standard structure
+- GitHub Projects v2 is available in the organization
+- Users have project write permissions
+
+SUCCESS CRITERIA
+================
+
+Minimum Viable Product
+----------------------
+- Successfully sync all tasks from Taskmaster to GitHub
+- Update existing items without creating duplicates
+- Handle basic error cases gracefully
+- Support both subtask display modes
+- Work with cron for automation
+
+Quality Metrics
+---------------
+- Zero data loss during sync
+- 95% success rate for individual task syncs
+- Complete sync in under 1 minute for typical projects
+- Clear error messages for all failure modes
+
+User Acceptance
+---------------
+- One-command sync operation
+- Visual representation matches Taskmaster data
+- No manual intervention required for standard use
+- Easy setup process (under 5 minutes)
+
+RISKS AND MITIGATION
+====================
+
+Technical Risks
+---------------
+- GitHub API changes: Use stable v4 GraphQL API
+- Rate limiting: Implement exponential backoff
+- Large task lists: Add pagination support
+- Authentication issues: Clear setup documentation
+
+Operational Risks
+-----------------
+- Sync conflicts: Phase 1 is read-only (no conflicts)
+- Data inconsistency: Use TM_ID for reliable tracking
+- Performance degradation: Add progress indicators
+
+DOCUMENTATION REQUIREMENTS
+==========================
+
+User Documentation
+------------------
+- README with quick start guide
+- Installation instructions
+- Command reference
+- Troubleshooting guide
+- Example workflows
+
+Developer Documentation
+-----------------------
+- Architecture overview
+- API integration examples
+- Configuration schema
+- Contributing guidelines
+- Claude Code integration guide
+
+TESTING REQUIREMENTS
+====================
+
+Functional Testing
+------------------
+- Test with various Taskmaster file formats
+- Verify all field mappings
+- Test error handling scenarios
+- Validate subtask display modes
+- Test with multiple tags
+
+Integration Testing
+-------------------
+- Test with real GitHub Projects
+- Verify authentication flow
+- Test API rate limiting
+- Validate large dataset handling
+
+User Acceptance Testing
+-----------------------
+- End-to-end sync workflow
+- Cron job automation
+- Error recovery procedures
+- Documentation accuracy
+
+DELIVERY AND DEPLOYMENT
+=======================
+
+Deliverables
+------------
+- Standalone Node.js utility (task-master-sync.js)
+- Cron setup script (setup-cron.sh)
+- Comprehensive documentation
+- Example configuration files
+- Test data and scripts
+
+Deployment Process
+------------------
+- Git repository with all source code
+- No build process required (pure Node.js)
+- Simple clone and run deployment
+- Optional npm package in future
+
+FUTURE ENHANCEMENTS
+===================
+
+Potential Features
+------------------
+- Web interface for configuration
+- Sync status dashboard
+- Multiple project support per tag
+- Custom field mapping UI
+- Taskmaster plugin architecture
+- Real-time sync via webhooks
+- Mobile app for task viewing
+- Slack/Discord notifications
+- Advanced filtering options
+- Bulk operations support

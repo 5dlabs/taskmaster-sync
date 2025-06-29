@@ -1,0 +1,194 @@
+{
+  "agentMapping": {
+    "description": "Maps agent roles to GitHub usernames for multi-agent task distribution",
+    "lastUpdated": "2025-01-28",
+    "agents": {
+      "pm": {
+        "githubUsername": "pm0-5dlabs",
+        "role": "Project Manager / Orchestrator",
+        "description": "Main orchestrator with full visibility and assignment capabilities",
+        "permissions": ["assign", "review", "manage", "orchestrate"]
+      },
+      "qa": {
+        "githubUsername": "qa0-5dlabs",
+        "role": "Quality Assurance Engineer",
+        "description": "Testing, validation, and quality assurance",
+        "permissions": ["test", "validate", "review", "qa"]
+      },
+      "swe-1": {
+        "githubUsername": "swe-1-5dlabs",
+        "role": "Senior Software Engineer",
+        "description": "Senior software engineer - peer with other SWEs",
+        "permissions": ["develop", "test", "review", "architect", "deploy"],
+        "serviceOwnership": ["taskmaster-sync", "copy-trader", "live-trader", "analytics"]
+      },
+      "swe-2": {
+        "githubUsername": "SWE-2-5dlabs",
+        "role": "Senior Software Engineer",
+        "description": "Senior software engineer - peer with other SWEs",
+        "permissions": ["develop", "test", "review", "architect", "deploy"],
+        "serviceOwnership": ["paper-trader", "portfolio-manager", "risk-manager"]
+      }
+    }
+  },
+  "assignmentRules": {
+    "description": "Rules for automatic task assignment based on service ownership and task type",
+    "rules": [
+      {
+        "name": "Service-based Assignment",
+        "description": "Assign tasks based on service ownership - primary rule",
+        "condition": "task.service || task.tags?.includes('service:') || task.title.includes('[')",
+        "logic": "serviceMapping",
+        "priority": 1
+      },
+      {
+        "name": "QA and Testing Tasks",
+        "condition": "task.title.toLowerCase().includes('test') || task.description.toLowerCase().includes('testing') || task.title.toLowerCase().includes('qa') || task.title.toLowerCase().includes('quality')",
+        "assignTo": "qa",
+        "priority": 2
+      },
+      {
+        "name": "Project Management Tasks",
+        "condition": "task.title.toLowerCase().includes('project') || task.title.toLowerCase().includes('plan') || task.title.toLowerCase().includes('coordinate') || task.title.toLowerCase().includes('roadmap')",
+        "assignTo": "pm",
+        "priority": 3
+      },
+      {
+        "name": "Infrastructure & Shared Services",
+        "condition": "task.title.toLowerCase().includes('infrastructure') || task.title.toLowerCase().includes('shared') || task.title.toLowerCase().includes('common') || task.title.toLowerCase().includes('deployment')",
+        "assignTo": "swe-1",
+        "priority": 4
+      }
+    ],
+    "defaultAssignee": "swe-1",
+    "fallbackAssignee": "pm",
+    "peerBasedAssignment": {
+      "description": "All SWEs are equal peers - assignment based purely on service ownership",
+      "enabled": true,
+      "strategy": "service-ownership",
+      "scalability": {
+        "description": "Easy to add more peer SWEs",
+        "newEngineerTemplate": {
+          "role": "Senior Software Engineer",
+          "description": "Senior software engineer - peer with other SWEs",
+          "permissions": ["develop", "test", "review", "architect", "deploy"],
+          "serviceOwnership": ["service-name-1", "service-name-2"]
+        }
+      }
+    }
+  },
+  "serviceMapping": {
+    "description": "Service ownership mapping - peer SWEs own different services, all equal priority",
+    "services": {
+      "taskmaster-sync": {
+        "owner": "swe-1",
+        "description": "Task synchronization utility - owned by SWE-1"
+      },
+      "copy-trader": {
+        "owner": "swe-1",
+        "description": "Copy trading microservice - owned by SWE-1"
+      },
+      "paper-trader": {
+        "owner": "swe-2",
+        "description": "Paper trading microservice - owned by SWE-2"
+      },
+      "live-trader": {
+        "owner": "swe-1",
+        "description": "Live trading microservice - owned by SWE-1"
+      },
+      "portfolio-manager": {
+        "owner": "swe-2",
+        "description": "Portfolio management microservice - owned by SWE-2"
+      },
+      "risk-manager": {
+        "owner": "swe-2",
+        "description": "Risk management microservice - owned by SWE-2"
+      },
+      "analytics": {
+        "owner": "swe-1",
+        "description": "Analytics and reporting microservice - owned by SWE-1"
+      }
+    },
+    "futureServices": {
+      "description": "Template for adding new services and engineers",
+      "examples": [
+        {
+          "serviceName": "notification-service",
+          "suggestedOwner": "swe-3",
+          "description": "When adding SWE-3, assign them notification-service"
+        },
+        {
+          "serviceName": "user-management",
+          "suggestedOwner": "swe-4",
+          "description": "When adding SWE-4, assign them user-management"
+        }
+      ]
+    },
+    "defaultService": "taskmaster-sync",
+    "assignmentLogic": {
+      "description": "How to assign tasks based on service ownership",
+      "rules": [
+        "1. Extract service from task tag (service:name), title prefix [name], or explicit service field",
+        "2. Look up service owner in serviceMapping.services",
+        "3. Assign task to the service owner",
+        "4. QA tasks always go to qa agent regardless of service",
+        "5. PM tasks always go to pm agent regardless of service",
+        "6. If no service context found, use defaultAssignee"
+      ]
+    }
+  },
+  "taskTagging": {
+    "description": "How to identify service context in Taskmaster tasks",
+    "methods": [
+      {
+        "name": "Service Tag",
+        "description": "Use Taskmaster tags like 'service:copy-trader'",
+        "example": "task-master add-task --prompt='...' --tag=service:copy-trader"
+      },
+      {
+        "name": "Service Field",
+        "description": "Add service field to task details",
+        "example": "task.service = 'copy-trader'"
+      },
+      {
+        "name": "Title Prefix",
+        "description": "Use service prefix in task titles",
+        "example": "[copy-trader] Implement trading logic"
+      },
+      {
+        "name": "Directory Context",
+        "description": "Infer service from task file location",
+        "example": "services/copy-trader/tasks.json"
+      }
+    ]
+  },
+  "testConfiguration": {
+    "description": "Configuration for testing assignee functionality",
+    "testScenarios": [
+      {
+        "name": "Basic SWE Assignment",
+        "description": "Test basic task assignment to primary SWE",
+        "taskTitle": "Implement core functionality",
+        "expectedAssignee": "swe-1-5dlabs"
+      },
+      {
+        "name": "QA Assignment",
+        "description": "Test automatic assignment to QA for testing tasks",
+        "taskTitle": "Test file watching functionality",
+        "expectedAssignee": "qa0-5dlabs"
+      },
+      {
+        "name": "PM Assignment",
+        "description": "Test project management task assignment",
+        "taskTitle": "Plan project roadmap",
+        "expectedAssignee": "pm0-5dlabs"
+      },
+      {
+        "name": "Service-based Assignment",
+        "description": "Test service-specific assignment",
+        "taskTitle": "[copy-trader] Implement trading algorithm",
+        "expectedAssignee": "swe-1-5dlabs"
+      }
+    ]
+  }
+}

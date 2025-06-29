@@ -1,0 +1,27 @@
+{
+  "task_mappings": {
+    "sync-test-1": "PVTI_lADOC8B7k84A8o3mzgcB42w",
+    "sync-test-2": "PVTI_lADOC8B7k84A8o3mzgcB420"
+  },
+  "synced_tasks": [
+    "sync-test-2",
+    "sync-test-1"
+  ],
+  "task_metadata": {
+    "sync-test-1": {
+      "github_item_id": "PVTI_lADOC8B7k84A8o3mzgcB42w",
+      "draft_issue_id": "I_kwDOPDji_M694R02",
+      "title": "Sync Engine Test Task 1",
+      "status": "pending",
+      "last_updated": 1751160975
+    },
+    "sync-test-2": {
+      "github_item_id": "PVTI_lADOC8B7k84A8o3mzgcB420",
+      "draft_issue_id": "I_kwDOPDji_M694R1i",
+      "title": "Sync Engine Test Task 2",
+      "status": "in-progress",
+      "last_updated": 1751160978
+    }
+  },
+  "last_sync": 1751160978
+}

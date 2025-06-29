@@ -1,0 +1,55 @@
+# Task ID: 4
+# Title: Build GitHub GraphQL API Client
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Implement async GraphQL client for GitHub Projects v2 API in Rust using reqwest or graphql-client crate with tokio runtime
+# Details:
+Create strongly-typed GraphQL query and mutation builders for GitHub Projects API v4 using Rust. Implement async functions for: addProjectV2DraftIssue, updateProjectV2DraftIssue, updateProjectV2ItemFieldValue, organization.projectV2 queries, and node.items/fields queries. Use tokio for async operations, reqwest or graphql-client crate for HTTP transport. Handle pagination and rate limiting with exponential backoff using async/await patterns.
+
+# Test Strategy:
+Test all async GraphQL operations with tokio test runtime, validate pagination handling, test rate limiting scenarios with async backoff, verify proper error handling for API failures, and ensure type safety of GraphQL schema bindings
+
+# Subtasks:
+## 1. Set up Rust GraphQL client dependencies [pending]
+### Dependencies: None
+### Description: Add reqwest, tokio, serde, and graphql-client crates to Cargo.toml
+### Details:
+
+
+## 2. Define GitHub GraphQL schema types [pending]
+### Dependencies: None
+### Description: Create strongly-typed Rust structs for GitHub Projects v2 API responses and mutations
+### Details:
+
+
+## 3. Implement async GraphQL client struct [pending]
+### Dependencies: None
+### Description: Create main client struct with reqwest HTTP client and authentication handling
+### Details:
+
+
+## 4. Build query functions for Projects v2 [pending]
+### Dependencies: None
+### Description: Implement async functions for organization.projectV2 and node.items/fields queries
+### Details:
+
+
+## 5. Build mutation functions for Projects v2 [pending]
+### Dependencies: None
+### Description: Implement async functions for addProjectV2DraftIssue, updateProjectV2DraftIssue, and updateProjectV2ItemFieldValue
+### Details:
+
+
+## 6. Implement async pagination handling [pending]
+### Dependencies: None
+### Description: Add cursor-based pagination support with async iteration patterns
+### Details:
+
+
+## 7. Add async rate limiting with exponential backoff [pending]
+### Dependencies: None
+### Description: Implement rate limiting detection and async retry logic with exponential backoff
+### Details:
+
+

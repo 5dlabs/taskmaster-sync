@@ -1,0 +1,49 @@
+# Task ID: 9
+# Title: Implement Task Dependencies and Subtask Handling
+# Status: pending
+# Dependencies: 8
+# Priority: medium
+# Description: Handle task dependencies using petgraph crate with async resolution and provide two subtask display modes
+# Details:
+Implement dependency tracking using the Dependencies custom field with petgraph crate for graph algorithms. Create strongly-typed dependency graphs with async dependency resolution using topological sorting. Create two subtask display modes: nested (subtasks in parent body as markdown) and separate (subtasks as individual GitHub items with parent references). Handle dependency chains and circular dependency detection using petgraph's cycle detection algorithms.
+
+# Test Strategy:
+Test both subtask display modes, validate async dependency resolution with topological sorting, test circular dependency detection using petgraph algorithms, verify strongly-typed dependency graph operations, and verify parent-child relationships
+
+# Subtasks:
+## 1. Add petgraph dependency and setup strongly-typed dependency graph structures [pending]
+### Dependencies: None
+### Description: Add petgraph crate to Cargo.toml and create type-safe dependency graph data structures
+### Details:
+
+
+## 2. Implement async dependency resolution with topological sorting [pending]
+### Dependencies: None
+### Description: Create async functions for resolving task dependencies using petgraph's topological sort algorithms
+### Details:
+
+
+## 3. Implement circular dependency detection using petgraph cycle detection [pending]
+### Dependencies: None
+### Description: Use petgraph's built-in cycle detection algorithms to identify and handle circular dependencies
+### Details:
+
+
+## 4. Create nested subtask display mode [pending]
+### Dependencies: None
+### Description: Implement functionality to display subtasks within parent task body as markdown format
+### Details:
+
+
+## 5. Create separate subtask display mode [pending]
+### Dependencies: None
+### Description: Implement functionality to create subtasks as individual GitHub items with proper parent references
+### Details:
+
+
+## 6. Implement dependency chain traversal with async operations [pending]
+### Dependencies: None
+### Description: Create async functions to traverse and resolve complex dependency chains using the petgraph-based dependency graph
+### Details:
+
+

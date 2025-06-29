@@ -1,0 +1,55 @@
+# Task ID: 18
+# Title: Complete File Watching Implementation with Debouncing and Error Handling
+# Status: pending
+# Dependencies: 11, 8, 1
+# Priority: high
+# Description: Implement robust file watching for tasks.json with automatic GitHub sync triggering using Rust's notify crate, including proper debouncing via tokio::time::Duration delays and comprehensive async error handling for watch failures.
+# Details:
+Build a complete file watching system that monitors tasks.json for changes and automatically triggers GitHub Projects synchronization using Rust async patterns. Implementation should include: 1) Use notify crate for reliable cross-platform file watching with async event handling, 2) Implement debouncing mechanism using tokio::time::Duration (300-500ms delay) to batch rapid file changes and prevent API rate limiting, 3) Add file change detection logic to differentiate between actual content changes vs. temporary file operations, 4) Create async watch service that can be started/stopped gracefully with proper cleanup using tokio tasks, 5) Implement comprehensive async error handling for file system errors, permission issues, and sync failures using Result types, 6) Add retry logic for failed sync operations with exponential backoff using tokio::time::sleep, 7) Include structured logging for all watch events, sync triggers, and error conditions, 8) Handle edge cases like file deletion, renaming, and temporary unavailability with proper async error propagation, 9) Provide configuration options for watch sensitivity and debounce timing, 10) Ensure watch service integrates seamlessly with existing async sync functionality and respects GitHub API rate limits.
+
+# Test Strategy:
+Create comprehensive async test suite that validates file watching functionality: 1) Test file watching initialization and proper async monitoring setup with notify crate, 2) Verify debouncing works correctly using tokio::time::Duration by making rapid file changes and ensuring only one sync is triggered, 3) Test async error handling scenarios including file permission errors, sync failures, and network issues with proper Result handling, 4) Validate retry logic with simulated API failures and network timeouts using exponential backoff with tokio::time::sleep, 5) Test edge cases like file deletion, renaming, and concurrent file access in async context, 6) Measure debounce timing accuracy using tokio time utilities and sync trigger response times, 7) Test async watch service start/stop functionality and proper cleanup of tokio tasks, 8) Validate integration with existing async sync functionality and configuration system, 9) Test with various file modification patterns using notify events (single edits, bulk changes, external tool modifications), 10) Verify structured logging captures all relevant async events and error conditions for troubleshooting.
+
+# Subtasks:
+## 1. Set up notify crate dependency and basic file watching structure [pending]
+### Dependencies: None
+### Description: Add notify crate to Cargo.toml and create basic async file watching module structure
+### Details:
+
+
+## 2. Implement async file watcher using notify crate [pending]
+### Dependencies: None
+### Description: Create async file watcher that monitors tasks.json using notify::Watcher with proper event handling
+### Details:
+
+
+## 3. Add debouncing mechanism with tokio::time::Duration [pending]
+### Dependencies: None
+### Description: Implement debouncing logic using tokio::time::Duration to batch rapid file changes with 300-500ms delay
+### Details:
+
+
+## 4. Create async error handling and retry logic [pending]
+### Dependencies: None
+### Description: Implement comprehensive async error handling with Result types and exponential backoff retry logic using tokio::time::sleep
+### Details:
+
+
+## 5. Integrate watch service with existing async sync functionality [pending]
+### Dependencies: None
+### Description: Connect the file watcher to trigger GitHub sync operations while respecting API rate limits
+### Details:
+
+
+## 6. Add structured logging and configuration options [pending]
+### Dependencies: None
+### Description: Implement logging for watch events and errors, plus configuration for debounce timing and watch sensitivity
+### Details:
+
+
+## 7. Create comprehensive async test suite [pending]
+### Dependencies: None
+### Description: Build test suite covering debouncing, error handling, retry logic, and integration with tokio runtime
+### Details:
+
+

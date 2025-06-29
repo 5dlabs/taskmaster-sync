@@ -1,0 +1,560 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "rust-conversion-core",
+        "title": "Core Infrastructure Setup",
+        "description": "Set up the core Rust project infrastructure with CLI, error handling, and authentication",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Create the foundational components for the Rust conversion including CLI argument parsing, error types, logging, and GitHub CLI wrapper",
+        "testStrategy": "Unit tests for each module, integration test for authentication",
+        "subtasks": [
+          {
+            "id": "rust-cli-setup",
+            "title": "Set up CLI with clap",
+            "description": "Implement command-line interface with clap",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": null,
+            "testStrategy": "Test `cargo run -- --help`",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "rust-error-types",
+            "title": "Implement error types",
+            "description": "Create error handling with thiserror",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": null,
+            "testStrategy": "Unit tests for error conversion",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "rust-data-models",
+        "title": "Data Models Implementation",
+        "description": "Implement all data structures and TaskMaster file reader",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "rust-conversion-core"
+        ],
+        "details": "Create structs in models/ directory, implement taskmaster.rs reader, add JSON serialization",
+        "testStrategy": "Test reading real TaskMaster files with various formats",
+        "subtasks": [
+          {
+            "id": "rust-taskmaster-reader",
+            "title": "Implement taskmaster.rs reader",
+            "description": "Port the TaskMaster file reading logic",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Support both legacy and tagged format",
+            "testStrategy": "Test with real project files",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "rust-config-management",
+            "title": "Create config.rs for settings",
+            "description": "Implement configuration management",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Persistent settings in .taskmaster/sync-config.json",
+            "testStrategy": "Test config load/save cycle",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "rust-github-integration",
+        "title": "GitHub API Integration",
+        "description": "Implement GitHub Projects v2 API client with GraphQL",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "rust-data-models"
+        ],
+        "details": "Port GraphQL queries, implement field management, add progress tracking",
+        "testStrategy": "Integration tests with real GitHub Project",
+        "subtasks": [
+          {
+            "id": "rust-github-api",
+            "title": "Implement github.rs API client",
+            "description": "GraphQL client using GitHub CLI",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Support Projects v2 CRUD operations",
+            "testStrategy": "Test with live API calls",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "rust-field-management",
+            "title": "Create field management functions",
+            "description": "Handle custom GitHub Project fields",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Auto-create required fields, map TaskMaster to GitHub",
+            "testStrategy": "Test field creation and mapping",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "rust-sync-engine",
+        "title": "Core Sync Engine Implementation",
+        "description": "Port the main synchronization logic from Node.js to Rust",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "rust-github-integration"
+        ],
+        "details": "Implement sync.rs main logic, subtask handling, dry-run mode, create/update project items",
+        "testStrategy": "Test full sync workflow with real TaskMaster files",
+        "subtasks": [
+          {
+            "id": "rust-sync-logic",
+            "title": "Port sync.rs main logic",
+            "description": "Core synchronization algorithm",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Handle create, update, delete operations",
+            "testStrategy": "Integration test with GitHub",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "rust-subtask-handling",
+            "title": "Implement subtask handling",
+            "description": "Support nested and separate subtask modes",
+            "status": "in-progress",
+            "priority": "medium",
+            "dependencies": [],
+            "details": "Two modes: nested in body, separate GitHub items",
+            "testStrategy": "Test both subtask modes",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "rust-real-issues",
+        "title": "Real GitHub Issues Integration",
+        "description": "Convert from draft issues to real repository issues",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "rust-sync-engine"
+        ],
+        "details": "Create actual GitHub repository issues instead of project-only drafts for better integration",
+        "testStrategy": "Verify issues appear in repository with proper links to project",
+        "subtasks": [
+          {
+            "id": "repo-issue-creation",
+            "title": "Implement repository issue creation",
+            "description": "Add support for creating real GitHub repository issues",
+            "status": "done",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Use createIssue mutation then addProjectV2ItemById",
+            "testStrategy": "Test issue creation and project linking",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "enhanced-subtasks",
+            "title": "Enhanced Subtask Handling",
+            "description": "Improve subtask support with real issues",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [
+              "repo-issue-creation"
+            ],
+            "details": "Support separate issues for complex subtasks with proper linking",
+            "testStrategy": "Test subtask issue creation and linking",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-2-5dlabs"
+      },
+      {
+        "id": "rust-advanced-features",
+        "title": "Advanced Features Implementation",
+        "description": "File watching, agent assignment, and other advanced features",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "rust-real-issues"
+        ],
+        "details": "Implement file watching with notify, add agent assignment logic, create cron setup command",
+        "testStrategy": "Test file watching triggers, agent assignment rules",
+        "subtasks": [
+          {
+            "id": "rust-file-watching",
+            "title": "Implement file watching",
+            "description": "Auto-sync on TaskMaster file changes",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [],
+            "details": "Use notify crate for filesystem events",
+            "testStrategy": "Test watch mode triggers sync",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "rust-agent-assignment",
+            "title": "Add agent assignment logic",
+            "description": "Auto-assign based on service mappings",
+            "status": "pending",
+            "priority": "low",
+            "dependencies": [],
+            "details": "Map services to GitHub usernames",
+            "testStrategy": "Test assignment rules",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-2-5dlabs"
+      },
+      {
+        "id": "rust-distribution",
+        "title": "Distribution and Release Setup",
+        "description": "Cross-platform builds, GitHub Actions, and release automation",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "rust-advanced-features"
+        ],
+        "details": "Set up cross-compilation, create release workflow, generate binaries for all platforms",
+        "testStrategy": "Test release workflow generates correct binaries",
+        "subtasks": [
+          {
+            "id": "rust-cross-compilation",
+            "title": "Set up cross-compilation",
+            "description": "Build for multiple platforms",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [],
+            "details": "Target Windows, macOS, Linux",
+            "testStrategy": "Test binaries on each platform",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "rust-github-actions",
+            "title": "Create release workflow",
+            "description": "Automated releases via GitHub Actions",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [],
+            "details": "Auto-build and release on tag push",
+            "testStrategy": "Test workflow with pre-release",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "enhanced-subtask-demo",
+        "title": "Enhanced Subtask System Demo",
+        "description": "Demonstration of intelligent subtask handling with real team assignments",
+        "status": "in-progress",
+        "priority": "medium",
+        "dependencies": [
+          "rust-real-issues"
+        ],
+        "details": "This task showcases how the enhanced subtask system creates separate GitHub issues for complex subtasks while keeping simple ones inline",
+        "testStrategy": "Verify complex subtasks become separate issues with proper assignees",
+        "subtasks": [
+          {
+            "id": "simple-config-update",
+            "title": "Update configuration file",
+            "description": "Basic config change",
+            "status": "pending",
+            "priority": "low",
+            "dependencies": [],
+            "details": null,
+            "testStrategy": null,
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "qa-testing-complex",
+            "title": "Comprehensive Testing Strategy Implementation",
+            "description": "Design and implement a comprehensive testing framework that covers unit tests, integration tests, end-to-end testing, performance testing, and security testing. This requires setting up test infrastructure, creating test data management, implementing automated test execution, and establishing quality gates for CI/CD pipeline integration.",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [],
+            "details": "The testing framework should support multiple test types: unit testing with mocking capabilities, integration testing with real services, end-to-end testing with browser automation, performance testing with load simulation, and security testing with vulnerability scanning. Include test reporting, metrics collection, and integration with existing development workflows.",
+            "testStrategy": "Create test plans for each testing type, validate framework components individually, then perform integration testing of the complete testing pipeline. Include stress testing and failure scenario validation.",
+            "subtasks": [],
+            "assignee": "qa0-5dlabs"
+          },
+          {
+            "id": "simple-documentation",
+            "title": "Update README",
+            "description": "Add usage examples",
+            "status": "pending",
+            "priority": "low",
+            "dependencies": [],
+            "details": null,
+            "testStrategy": null,
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "pm-project-coordination",
+            "title": "Cross-Team Project Coordination Framework",
+            "description": "Establish comprehensive project coordination processes for managing multi-service, multi-engineer initiatives across the trading platform ecosystem",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Design and implement project management frameworks that facilitate coordination between SWE-1 (copy-trader, live-trader, analytics, taskmaster-sync), SWE-2 (paper-trader, portfolio-manager, risk-manager), QA testing workflows, and stakeholder communication. Include milestone tracking, dependency management, resource allocation, and risk assessment protocols.",
+            "testStrategy": "Pilot the framework with a sample cross-service project, gather feedback from all team members, iterate on processes, and validate effectiveness through measurable project outcomes",
+            "subtasks": [],
+            "assignee": "pm0-5dlabs"
+          },
+          {
+            "id": "architecture-with-nested",
+            "title": "Microservices Architecture Enhancement",
+            "description": "Design scalable microservices architecture improvements",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Enhance the current microservices architecture to improve scalability, reliability, and maintainability across all trading services",
+            "testStrategy": "Architecture review, load testing, and gradual rollout",
+            "subtasks": [
+              {
+                "id": "service-mesh-design",
+                "title": "Service mesh implementation",
+                "description": "Design service mesh for inter-service communication",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [],
+                "details": null,
+                "testStrategy": null,
+                "subtasks": [],
+                "assignee": "swe-1-5dlabs"
+              },
+              {
+                "id": "monitoring-setup",
+                "title": "Enhanced monitoring setup",
+                "description": "Implement comprehensive service monitoring",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [],
+                "details": null,
+                "testStrategy": null,
+                "subtasks": [],
+                "assignee": "swe-1-5dlabs"
+              }
+            ],
+            "assignee": "swe-2-5dlabs"
+          }
+        ],
+        "assignee": "pm0-5dlabs"
+      },
+      {
+        "id": "auto-project-discovery",
+        "title": "Automatic Project Number Discovery",
+        "description": "Implement smart project discovery so users don't need to manually specify project numbers",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "rust-real-issues"
+        ],
+        "details": "Add functionality to automatically detect GitHub project numbers based on repository context, making the tool much more user-friendly by eliminating the need to manually find and specify project numbers",
+        "testStrategy": "Test auto-discovery with various repository setups and project configurations",
+        "subtasks": [
+          {
+            "id": "repo-detection",
+            "title": "Git Repository Detection",
+            "description": "Auto-detect current repository from git remote",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Parse git remote URL to extract owner/repo, handle various URL formats (HTTPS, SSH, etc.)",
+            "testStrategy": "Test with different git remote configurations",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "project-discovery-api",
+            "title": "GitHub Project Discovery API",
+            "description": "Query GitHub API to find projects associated with repository",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [
+              "repo-detection"
+            ],
+            "details": "Use GitHub GraphQL API to find all projects linked to the current repository",
+            "testStrategy": "Test with repositories that have multiple projects",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "smart-project-matching",
+            "title": "Smart Project Matching Logic",
+            "description": "Intelligent matching of Taskmaster tags to GitHub projects",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [
+              "project-discovery-api"
+            ],
+            "details": "Match based on project names, tags, and common patterns (e.g., 'master' tag → 'Main Development' project)",
+            "testStrategy": "Test matching logic with various project naming conventions",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "cli-auto-discovery",
+            "title": "CLI Auto-Discovery Commands",
+            "description": "Add CLI commands that use auto-discovery",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [
+              "smart-project-matching"
+            ],
+            "details": "Enhance existing commands to work without project numbers: 'task-master-sync sync master' (no number needed), 'task-master-sync discover' to show available projects",
+            "testStrategy": "Test CLI commands work seamlessly without manual project specification",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "fallback-handling",
+            "title": "Graceful Fallback Handling",
+            "description": "Handle cases where auto-discovery fails or is ambiguous",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [
+              "cli-auto-discovery"
+            ],
+            "details": "Provide helpful error messages, suggest available projects, allow manual override when needed",
+            "testStrategy": "Test error scenarios and user guidance",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          }
+        ],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "test-assignee-fix",
+        "title": "Test Assignee Fix",
+        "description": "Simple test task to verify assignee functionality works",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [],
+        "details": null,
+        "testStrategy": null,
+        "subtasks": [],
+        "assignee": "qa0-5dlabs"
+      },
+      {
+        "id": "test-rest-api-assignee",
+        "title": "Test REST API Assignee",
+        "description": "Testing assignee functionality with REST API approach",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [],
+        "details": null,
+        "testStrategy": null,
+        "subtasks": [],
+        "assignee": "swe-1-5dlabs"
+      },
+      {
+        "id": "status-mapping-workflow",
+        "title": "Implement CTO/QA Controlled Status Workflow",
+        "description": "Implement status mapping where TaskMaster 'done' maps to GitHub 'QA' status, requiring CTO/QA approval for true completion",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "auto-project-discovery"
+        ],
+        "details": "Create a status mapping system where developer 'done' in TaskMaster becomes 'QA' in GitHub Projects. Only CTO and QA agents can move items to true 'Done' status. This prevents AI agents from prematurely marking tasks as complete and ensures proper human oversight of completion.",
+        "testStrategy": "Test status mapping with various TaskMaster statuses, verify QA workflow prevents premature completion",
+        "subtasks": [
+          {
+            "id": "status-mapping-config",
+            "title": "Configure Status Field Mapping",
+            "description": "Set up custom status mapping in field manager",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [],
+            "details": "Update FieldManager to map TaskMaster statuses to GitHub Project statuses: pending→To Do, in-progress→In Progress, done→QA Review, with only manual promotion to Done",
+            "testStrategy": "Test all status transitions and verify mapping works correctly",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "github-status-options",
+            "title": "Create GitHub Project Status Options",
+            "description": "Set up proper status options in GitHub Projects",
+            "status": "pending",
+            "priority": "high",
+            "dependencies": [
+              "status-mapping-config"
+            ],
+            "details": "Configure GitHub Project with status options: To Do, In Progress, QA Review, Done. Ensure proper color coding and descriptions for each status level.",
+            "testStrategy": "Verify status options are created correctly with proper colors and descriptions",
+            "subtasks": [],
+            "assignee": "swe-1-5dlabs"
+          },
+          {
+            "id": "qa-workflow-documentation",
+            "title": "Document QA Approval Workflow",
+            "description": "Create documentation for CTO/QA status approval process",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [
+              "github-status-options"
+            ],
+            "details": "Document the workflow where developers mark tasks as 'done' in TaskMaster (which becomes 'QA Review' in GitHub), then CTO/QA manually promotes to 'Done' after verification. Include guidelines for what constitutes completion.",
+            "testStrategy": "Review documentation with CTO and QA for completeness and clarity",
+            "subtasks": [],
+            "assignee": "pm0-5dlabs"
+          },
+          {
+            "id": "prevent-ai-completion",
+            "title": "Implement AI Agent Completion Prevention",
+            "description": "Add safeguards to prevent AI agents from marking tasks as truly complete",
+            "status": "pending",
+            "priority": "medium",
+            "dependencies": [
+              "qa-workflow-documentation"
+            ],
+            "details": "Implement checks in the sync system to ensure AI agents cannot directly set GitHub status to 'Done'. Only 'QA Review' status can be set automatically, requiring manual human intervention for final completion.",
+            "testStrategy": "Test that AI agents cannot bypass QA workflow and set items to Done status",
+            "subtasks": [],
+            "assignee": "swe-2-5dlabs"
+          }
+        ],
+        "assignee": "pm0-5dlabs"
+      }
+    ],
+    "metadata": {
+      "created": "2024-12-29T00:00:00Z",
+      "updated": "2025-06-29T01:55:28.146Z",
+      "description": "TaskMaster Sync Rust conversion project tasks"
+    }
+  }
+}

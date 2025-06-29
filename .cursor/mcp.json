@@ -1,0 +1,12 @@
+{
+	"mcpServers": {
+		"task-master-ai": {
+			"command": "npx",
+			"args": ["-y", "task-master-ai"]
+
+		},
+		"context7": {
+			"url": "https://mcp.context7.com/mcp"
+		  }
+	}
+}

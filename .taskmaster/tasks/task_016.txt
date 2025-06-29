@@ -1,0 +1,11 @@
+# Task ID: 16
+# Title: Test File Watching Functionality with GitHub Projects Integration
+# Status: pending
+# Dependencies: 11, 8, 6, 4
+# Priority: high
+# Description: Create comprehensive integration tests for file watching functionality using the notify crate for cross-platform file system monitoring. Tests should validate async event handling with tokio channels, debouncing mechanisms, and automatic synchronization when tasks.json is modified.
+# Details:
+Implement end-to-end integration tests that validate the complete file watching workflow using Rust's notify crate and tokio async runtime. Create test setup that: 1) Creates a new GitHub project via API for testing isolation, 2) Configures sync mapping in .taskmaster/config.json with the test project, 3) Starts async file watching service using notify crate with tokio channels for event handling, 4) Implements debouncing to efficiently handle rapid file changes, 5) Modifies tasks.json with test task data (add, update, delete operations), 6) Verifies that debounced changes automatically trigger sync operations within expected timeframes, 7) Validates that GitHub project items are correctly created/updated/removed, 8) Tests error scenarios like network failures during auto-sync and file watcher errors, 9) Tests debouncing behavior with rapid successive file changes, 10) Validates async event handling doesn't block other operations, 11) Cleans up test project after completion. Include performance validation to ensure debounced file changes trigger syncs within 5 seconds after the last change. Implement proper test isolation to avoid conflicts with existing projects and handle concurrent test execution with async safety.
+
+# Test Strategy:
+Execute integration test suite that creates isolated test environment, validates notify crate file watching with tokio async channels, measures debouncing effectiveness and sync response times, tests error handling scenarios including file watcher failures, and verifies complete cleanup. Test with various file modification patterns (single changes, bulk updates, rapid successive changes) to validate debouncing behavior, and ensure GitHub project state matches expected results after each debounced sync operation. Verify async event handling performance and proper channel communication.

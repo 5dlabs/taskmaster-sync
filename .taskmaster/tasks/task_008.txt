@@ -1,0 +1,61 @@
+# Task ID: 8
+# Title: Implement Core Task Synchronization Engine
+# Status: pending
+# Dependencies: 7, 2
+# Priority: high
+# Description: Build the main asynchronous synchronization logic using Rust and tokio to create and update GitHub Project items
+# Details:
+Create the core async sync engine using Rust with tokio runtime that processes Taskmaster tasks and creates/updates GitHub Project items. Implement with futures and async/await patterns for concurrent operations. Map Taskmaster fields to GitHub fields (title, description, status, priority). Handle task metadata preservation and implement transaction-like operations using Result types for proper error propagation. Support both create and update operations based on TM_ID tracking. Use async HTTP clients for GitHub API interactions and implement proper error handling with Result<T, E> patterns.
+
+# Test Strategy:
+Test async task creation and updates with tokio test framework, validate field mapping accuracy, test concurrent operations and error propagation with Result types, verify transaction-like behavior and rollback scenarios, and test metadata preservation across async operations
+
+# Subtasks:
+## 1. Set up async Rust project structure with tokio [pending]
+### Dependencies: None
+### Description: Initialize Rust project with tokio runtime and async dependencies
+### Details:
+
+
+## 2. Implement async GitHub API client wrapper [pending]
+### Dependencies: None
+### Description: Create async HTTP client for GitHub Project API interactions using reqwest or similar
+### Details:
+
+
+## 3. Design async task processing pipeline [pending]
+### Dependencies: None
+### Description: Create async functions for task processing with proper Result<T, E> error handling
+### Details:
+
+
+## 4. Implement async field mapping logic [pending]
+### Dependencies: None
+### Description: Create async functions to map Taskmaster fields to GitHub Project fields
+### Details:
+
+
+## 5. Build transaction-like operations with Result types [pending]
+### Dependencies: None
+### Description: Implement atomic-like operations using Result types for error propagation and rollback scenarios
+### Details:
+
+
+## 6. Implement async TM_ID tracking system [pending]
+### Dependencies: None
+### Description: Create async functions to track and manage TM_ID for create/update decisions
+### Details:
+
+
+## 7. Add concurrent task processing capabilities [pending]
+### Dependencies: None
+### Description: Implement async task batching and concurrent processing using tokio spawn and join handles
+### Details:
+
+
+## 8. Implement comprehensive async error handling [pending]
+### Dependencies: None
+### Description: Create robust error handling with custom error types and proper Result propagation
+### Details:
+
+

@@ -54,8 +54,7 @@ jobs:
             ```yaml
             - uses: 5dlabs/taskmaster-sync@${{ steps.get_version.outputs.version }}
               with:
-                direction: to-github
-                delta: true
+                project-number: 123  # Optional if in config
             ```
 
             ### Direct Binary Download

@@ -33,12 +33,6 @@ jobs:
           # Auto-detects tag from branch name if not specified
           # tag: ${{ github.event.pull_request.head.ref || 'main' }}
 
-          # Sync direction
-          direction: to-github
-
-          # Use delta sync for performance
-          delta: true
-
           # Project number (optional if in config)
           # project-number: 123
 
@@ -71,37 +65,3 @@ jobs:
               body: body
             });
 
-  # Example: Bidirectional sync on main branch
-  sync-main-bidirectional:
-    name: Bidirectional Sync on Main
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull Changes from GitHub
-        uses: 5dlabs/taskmaster-sync@v1
-        with:
-          direction: from-github
-          tag: main
-
-      - name: Push Changes to GitHub
-        uses: 5dlabs/taskmaster-sync@v1
-        with:
-          direction: to-github
-          tag: main
-          delta: true
-
-      - name: Commit Any Updates
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .taskmaster/
-          git diff --staged --quiet || {
-            git commit -m "chore: sync task updates from GitHub Project [skip ci]"
-            git push
-          }

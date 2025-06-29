@@ -18,11 +18,6 @@ inputs:
     required: false
     default: ''
 
-  direction:
-    description: 'Sync direction: to-github, from-github, or bidirectional'
-    required: false
-    default: 'to-github'
-
   github-token:
     description: 'GitHub token for authentication'
     required: false
@@ -32,16 +27,6 @@ inputs:
     description: 'Specific version of taskmaster-sync to use'
     required: false
     default: 'latest'
-
-  delta:
-    description: 'Use delta sync (only sync changed items)'
-    required: false
-    default: 'true'
-
-  force:
-    description: 'Force sync even if no changes detected'
-    required: false
-    default: 'false'
 
 outputs:
   created:
@@ -143,18 +128,8 @@ runs:
           CMD="$CMD --project ${{ inputs.project-number }}"
         fi
 
-        # Add direction
-        CMD="$CMD --direction ${{ inputs.direction }}"
-
-        # Add delta flag
-        if [ "${{ inputs.delta }}" = "true" ]; then
-          CMD="$CMD --delta"
-        fi
-
-        # Add force flag
-        if [ "${{ inputs.force }}" = "true" ]; then
-          CMD="$CMD --force"
-        fi
+        # Always use delta sync (default behavior)
+        CMD="$CMD --direction to-github --delta"
 
         # Add JSON output for parsing
         CMD="$CMD --json"

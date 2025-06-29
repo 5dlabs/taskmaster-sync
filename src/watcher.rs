@@ -8,12 +8,14 @@
 
 use crate::error::Result;
 use crate::sync::{SyncEngine, SyncOptions};
-use notify::{Event, Watcher};
+use crate::TaskMasterError;
+use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{mpsc, Mutex};
 use tokio::time;
+use tracing::{error, info, warn};
 
 /// Watches TaskMaster files for changes and triggers sync
 pub struct TaskWatcher {
@@ -34,45 +36,162 @@ pub enum WatchEvent {
 impl TaskWatcher {
     /// Creates a new task watcher
     pub fn new(
-        _project_root: impl AsRef<Path>,
-        _sync_engine: Arc<Mutex<SyncEngine>>,
-        _debounce_duration: Duration,
+        project_root: impl AsRef<Path>,
+        sync_engine: Arc<Mutex<SyncEngine>>,
+        debounce_duration: Duration,
     ) -> Result<Self> {
-        todo!("Create file system watcher")
+        let watch_path = project_root.as_ref().join(".taskmaster/tasks/tasks.json");
+
+        if !watch_path.exists() {
+            return Err(TaskMasterError::ConfigError(format!(
+                "Tasks file not found at: {}",
+                watch_path.display()
+            )));
+        }
+
+        // Create a channel for events
+        let (tx, rx) = mpsc::channel(100);
+
+        // Create the watcher
+        let watcher = RecommendedWatcher::new(
+            move |result: notify::Result<Event>| {
+                match result {
+                    Ok(event) => {
+                        // Only care about write/create events
+                        if matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_)) {
+                            if let Err(e) = tx.blocking_send(WatchEvent::TasksChanged) {
+                                error!("Failed to send watch event: {}", e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        error!("Watch error: {}", e);
+                        let _ = tx.blocking_send(WatchEvent::Error(e.to_string()));
+                    }
+                }
+            },
+            Config::default(),
+        )
+        .map_err(|e| TaskMasterError::WatchError(e.to_string()))?;
+
+        let watcher_instance = TaskWatcher {
+            watcher: Box::new(watcher),
+            _sync_engine: sync_engine.clone(),
+            _debounce_duration: debounce_duration,
+            watch_path: watch_path.clone(),
+        };
+
+        // Spawn the event processor
+        tokio::spawn(Self::event_processor(rx, sync_engine, debounce_duration));
+
+        Ok(watcher_instance)
     }
 
     /// Starts watching for file changes
     pub fn start(&mut self) -> Result<()> {
-        todo!("Start watching tasks.json for changes")
+        info!("Starting file watcher for: {}", self.watch_path.display());
+
+        // Watch the parent directory to catch file replacements
+        let watch_dir = self
+            .watch_path
+            .parent()
+            .ok_or_else(|| TaskMasterError::ConfigError("Invalid watch path".to_string()))?;
+
+        self.watcher
+            .watch(watch_dir, RecursiveMode::NonRecursive)
+            .map_err(|e| TaskMasterError::WatchError(e.to_string()))?;
+
+        info!("File watcher started successfully");
+        Ok(())
     }
 
     /// Stops watching
     pub fn stop(&mut self) -> Result<()> {
-        todo!("Stop file system watcher")
-    }
+        info!("Stopping file watcher");
 
-    /// Handles file change events
-    fn handle_event(&self, _event: Event) -> Result<()> {
-        todo!("Process file system events")
-    }
+        let watch_dir = self
+            .watch_path
+            .parent()
+            .ok_or_else(|| TaskMasterError::ConfigError("Invalid watch path".to_string()))?;
 
-    /// Triggers a sync operation
-    fn trigger_sync(&self) -> Result<()> {
-        todo!("Trigger sync with appropriate options")
-    }
+        self.watcher
+            .unwatch(watch_dir)
+            .map_err(|e| TaskMasterError::WatchError(e.to_string()))?;
 
-    /// Sets up the file system watcher
-    fn setup_watcher(&mut self) -> Result<()> {
-        todo!("Configure and start notify watcher")
+        info!("File watcher stopped");
+        Ok(())
     }
 
     /// Processes events with debouncing
-    fn event_processor(
-        _rx: mpsc::Receiver<WatchEvent>,
-        _sync_engine: Arc<Mutex<SyncEngine>>,
-        _debounce_duration: Duration,
+    async fn event_processor(
+        mut rx: mpsc::Receiver<WatchEvent>,
+        sync_engine: Arc<Mutex<SyncEngine>>,
+        debounce_duration: Duration,
     ) {
-        todo!("Process events with debouncing logic")
+        let mut debouncer = Debouncer::new(debounce_duration);
+        let mut pending_sync = false;
+
+        loop {
+            // Wait for event or timeout
+            match time::timeout(debounce_duration, rx.recv()).await {
+                Ok(Some(event)) => match event {
+                    WatchEvent::TasksChanged => {
+                        info!("File change detected");
+                        pending_sync = true;
+                        debouncer.reset();
+                    }
+                    WatchEvent::ConfigChanged => {
+                        info!("Config change detected");
+                        pending_sync = true;
+                        debouncer.reset();
+                    }
+                    WatchEvent::Error(e) => {
+                        error!("Watch error: {}", e);
+                    }
+                },
+                Ok(None) => {
+                    // Channel closed
+                    warn!("Watch event channel closed");
+                    break;
+                }
+                Err(_) => {
+                    // Timeout - check if we should sync
+                    if pending_sync && debouncer.should_trigger() {
+                        info!("Triggering sync after debounce period");
+
+                        let engine = sync_engine.lock().await;
+                        let tag = engine.tag.clone();
+                        let options = SyncOptions {
+                            dry_run: false,
+                            force: false,
+                            direction: crate::sync::SyncDirection::ToGitHub,
+                            batch_size: 50,
+                            include_archived: false,
+                            use_delta_sync: true,
+                        };
+
+                        drop(engine); // Release lock before sync
+
+                        let mut engine = sync_engine.lock().await;
+                        match engine.sync(&tag, options).await {
+                            Ok(result) => {
+                                info!(
+                                    "Auto-sync completed: created={}, updated={}, deleted={}",
+                                    result.stats.created,
+                                    result.stats.updated,
+                                    result.stats.deleted
+                                );
+                            }
+                            Err(e) => {
+                                error!("Auto-sync failed: {}", e);
+                            }
+                        }
+
+                        pending_sync = false;
+                    }
+                }
+            }
+        }
     }
 }
 

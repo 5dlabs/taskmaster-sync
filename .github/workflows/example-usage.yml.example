@@ -1,0 +1,107 @@
+# Example workflow showing how to use taskmaster-sync as a GitHub Action
+# Copy this to your repository's .github/workflows/ directory
+
+name: Sync Tasks with GitHub Projects
+
+on:
+  # Sync when PR is created or updated
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+  # Sync after merge to main
+  push:
+    branches: [main]
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  sync-tasks:
+    name: Sync TaskMaster to GitHub Project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # For PRs, checkout the PR branch
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Sync Tasks
+        uses: 5dlabs/taskmaster-sync@v1  # Use specific version in production
+        with:
+          # Auto-detects tag from branch name if not specified
+          # tag: ${{ github.event.pull_request.head.ref || 'main' }}
+
+          # Sync direction
+          direction: to-github
+
+          # Use delta sync for performance
+          delta: true
+
+          # Project number (optional if in config)
+          # project-number: 123
+
+          # Custom config path (optional)
+          # config-path: .taskmaster/sync-config.json
+
+          # GitHub token (defaults to GITHUB_TOKEN)
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = ${{ toJson(steps.sync.outputs) }};
+            const body = `## 📋 TaskMaster Sync Results
+
+            - ✅ Created: ${output.created || 0} items
+            - 📝 Updated: ${output.updated || 0} items
+            - 🗑️ Deleted: ${output.deleted || 0} items
+            - ⏭️ Skipped: ${output.skipped || 0} items
+            - ❌ Errors: ${output.errors || 0}
+
+            View in [GitHub Project](https://github.com/orgs/${{ github.repository_owner }}/projects/YOUR_PROJECT_NUMBER)`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # Example: Bidirectional sync on main branch
+  sync-main-bidirectional:
+    name: Bidirectional Sync on Main
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Changes from GitHub
+        uses: 5dlabs/taskmaster-sync@v1
+        with:
+          direction: from-github
+          tag: main
+
+      - name: Push Changes to GitHub
+        uses: 5dlabs/taskmaster-sync@v1
+        with:
+          direction: to-github
+          tag: main
+          delta: true
+
+      - name: Commit Any Updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .taskmaster/
+          git diff --staged --quiet || {
+            git commit -m "chore: sync task updates from GitHub Project [skip ci]"
+            git push
+          }

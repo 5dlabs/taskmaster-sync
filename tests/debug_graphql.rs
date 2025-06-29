@@ -25,7 +25,7 @@ async fn test_raw_graphql() {
         "number": 9
     });
 
-    println!("Query: {}", query);
+    println!("Query: {query}");
     println!(
         "Variables: {}",
         serde_json::to_string_pretty(&variables).unwrap()
@@ -39,7 +39,7 @@ async fn test_raw_graphql() {
             );
         }
         Err(e) => {
-            println!("Error: {}", e);
+            println!("Error: {e}");
         }
     }
 }

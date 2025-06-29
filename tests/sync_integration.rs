@@ -25,17 +25,16 @@ async fn test_sync_engine_basic() -> Result<()> {
     let config_content = format!(
         r#"{{
         "version": "1.0.0",
-        "organization": "{}",
+        "organization": "{TEST_ORG}",
         "project_mappings": {{
             "test": {{
-                "project_number": {},
+                "project_number": {TEST_PROJECT_NUMBER},
                 "project_id": "test-project",
-                "repository": "{}/taskmaster-sync",
+                "repository": "{TEST_ORG}/taskmaster-sync",
                 "subtask_mode": "nested"
             }}
         }}
-    }}"#,
-        TEST_ORG, TEST_PROJECT_NUMBER, TEST_ORG
+    }}"#
     );
 
     fs::write(&config_path, config_content)?;
@@ -151,10 +150,9 @@ async fn test_sync_dry_run() -> Result<()> {
     let config_content = format!(
         r#"{{
         "version": "1.0.0",
-        "organization": "{}",
+        "organization": "{TEST_ORG}",
         "project_mappings": {{}}
-    }}"#,
-        TEST_ORG
+    }}"#
     );
 
     fs::write(&config_path, config_content)?;

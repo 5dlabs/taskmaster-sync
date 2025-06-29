@@ -33,6 +33,7 @@ pub struct SyncEngine {
     project: Option<Project>,
     project_mapping: Option<crate::models::config::ProjectMapping>,
     subtask_config: SubtaskConfig,
+    pub tag: String,
 }
 
 /// Sync operation options
@@ -121,6 +122,7 @@ impl SyncEngine {
             project: Some(project),
             project_mapping,
             subtask_config: SubtaskHandler::default_config(),
+            tag: tag.to_string(),
         })
     }
 
@@ -416,8 +418,9 @@ impl SyncEngine {
         // Create the task body (only include simple subtasks inline)
         let body = self.format_task_body_enhanced(task);
 
-        // Extract assignees
-        let assignees = task.assignee.as_ref().map(|a| vec![a.clone()]);
+        // Determine GitHub assignee based on task status
+        let github_assignee = self.fields.get_github_assignee(task);
+        let assignees = github_assignee.map(|a| vec![a]);
 
         // Check if we should create a repository issue or draft issue
         let result = if let Some(mapping) = &self.project_mapping {
@@ -475,7 +478,7 @@ impl SyncEngine {
         // self.subtasks.add_hierarchy_fields(&mut field_values, task);
 
         // Track whether TM_ID was successfully set
-        let tm_id_set = false;
+        let mut tm_id_set = false;
 
         // Update each field
         for (field_name, value) in field_values {
@@ -507,7 +510,7 @@ impl SyncEngine {
                         tracing::debug!("Successfully updated field: {}", field_name);
                         println!("DEBUG: Successfully updated field: {field_name}");
                         if field_name == "TM_ID" {
-                            let _ = true; // tm_id_set tracking
+                            tm_id_set = true;
                         }
                     }
                     Err(e) => {
@@ -569,7 +572,7 @@ impl SyncEngine {
                                 field_name
                             );
                             if field_name == "TM_ID" {
-                                let _ = true; // tm_id_set tracking
+                                tm_id_set = true;
                             }
                         }
                         Err(e) => tracing::error!(
@@ -618,7 +621,6 @@ impl SyncEngine {
                     );
                 } else {
                     tracing::info!("Emergency TM_ID update succeeded for: {}", task.id);
-                    let _ = true; // tm_id_set tracking
                 }
             }
         }
@@ -645,6 +647,18 @@ impl SyncEngine {
             self.github
                 .update_project_item(&project_id, &draft_id, &task.title, &body)
                 .await?;
+
+            // Update GitHub assignees based on task status (for repository issues)
+            if let Some(github_assignee) = self.fields.get_github_assignee(task) {
+                if let Err(e) = self
+                    .github
+                    .update_issue_assignees(&draft_id, vec![github_assignee.clone()])
+                    .await
+                {
+                    tracing::debug!("Could not update assignees (might be draft issue): {}", e);
+                    // This is expected for draft issues, only repository issues support assignees
+                }
+            }
         }
 
         // Update fields
@@ -874,19 +888,32 @@ impl SyncEngine {
 
         // Check if this is a single select field that needs option ID
         match field_name {
-            "Priority" | "Status" => {
+            "Priority" | "Status" | "Agent" => {
                 // Try to get or create the option ID
                 match self
                     .fields
                     .ensure_option_exists(&self.github, project_id, field_name, value_str)
                     .await
                 {
-                    Ok(option_id) => Ok(serde_json::json!({
-                        "singleSelectOptionId": option_id
-                    })),
-                    Err(_) => {
-                        // Fallback to text if option creation fails
-                        Ok(serde_json::json!({ "text": value_str }))
+                    Ok(option_id) => {
+                        tracing::debug!(
+                            "Created/found option ID for {}: {} = {}",
+                            field_name,
+                            value_str,
+                            option_id
+                        );
+                        Ok(serde_json::json!({
+                            "singleSelectOptionId": option_id
+                        }))
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            "Failed to create option for {} field '{}': {}",
+                            field_name,
+                            value_str,
+                            e
+                        );
+                        Err(e)
                     }
                 }
             }

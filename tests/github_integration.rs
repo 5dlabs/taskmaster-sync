@@ -28,7 +28,7 @@ async fn test_github_auth_status() {
             assert!(status.authenticated);
         }
         Err(e) => {
-            panic!("Authentication failed: {}", e);
+            panic!("Authentication failed: {e}");
         }
     }
 }
@@ -57,7 +57,7 @@ async fn test_get_project() {
             assert!(!project.title.is_empty());
         }
         Err(e) => {
-            panic!("Failed to get project: {}", e);
+            panic!("Failed to get project: {e}");
         }
     }
 }
@@ -91,7 +91,7 @@ async fn test_project_fields() {
             assert!(field_names.contains(&"Status"));
         }
         Err(e) => {
-            panic!("Failed to get fields: {}", e);
+            panic!("Failed to get fields: {e}");
         }
     }
 }
@@ -113,7 +113,7 @@ async fn test_create_and_delete_item() {
     let test_title = format!("Test Item {}", chrono::Utc::now().timestamp());
     let test_body = "This is a test item created by integration tests";
 
-    println!("Creating item: {}", test_title);
+    println!("Creating item: {test_title}");
 
     let result = api
         .create_project_item(&project.id, &test_title, test_body)
@@ -199,14 +199,14 @@ async fn test_field_operations() {
     // Try to create a custom field
     let field_name = format!("TestField{}", chrono::Utc::now().timestamp_millis());
 
-    println!("Creating field: {}", field_name);
+    println!("Creating field: {field_name}");
 
     match api
         .create_custom_field(&project.id, &field_name, "TEXT")
         .await
     {
         Ok(field_id) => {
-            println!("✓ Created field with ID: {}", field_id);
+            println!("✓ Created field with ID: {field_id}");
 
             // Verify it exists
             let fields = api
@@ -219,7 +219,7 @@ async fn test_field_operations() {
         }
         Err(e) => {
             // Some projects may not allow custom field creation
-            println!("⚠️  Could not create custom field: {}", e);
+            println!("⚠️  Could not create custom field: {e}");
         }
     }
 }
@@ -276,14 +276,14 @@ async fn test_parse_project_url() {
                 if let Some((exp_org, exp_num)) = expected {
                     assert_eq!(org, exp_org);
                     assert_eq!(num, exp_num);
-                    println!("✓ Parsed {} -> org: {}, number: {}", url, org, num);
+                    println!("✓ Parsed {url} -> org: {org}, number: {num}");
                 } else {
-                    panic!("Expected parse to fail for: {}", url);
+                    panic!("Expected parse to fail for: {url}");
                 }
             }
             Err(_) => {
-                assert!(expected.is_none(), "Expected parse to succeed for: {}", url);
-                println!("✓ Correctly rejected invalid URL: {}", url);
+                assert!(expected.is_none(), "Expected parse to succeed for: {url}");
+                println!("✓ Correctly rejected invalid URL: {url}");
             }
         }
     }
@@ -299,7 +299,7 @@ async fn test_graphql_error_handling() {
     match api.get_project(999999).await {
         Ok(_) => panic!("Expected error for nonexistent project"),
         Err(e) => {
-            println!("✓ Got expected error: {}", e);
+            println!("✓ Got expected error: {e}");
             let error_str = e.to_string();
             assert!(error_str.contains("GitHub") || error_str.contains("GraphQL"));
         }

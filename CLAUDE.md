@@ -30,6 +30,10 @@ Task Master Sync is a high-performance Rust CLI tool that synchronizes Taskmaste
 - Quality gates enforced at all stages
 - Focus on developer productivity with AI assistance
 
+### Important Authentication Note
+
+**IMPORTANT**: Always use the Zsh profile with Jonathan Julian user to access the GitHub CLI. This ensures proper authentication for GitHub operations.
+
 ## Code Patterns & Standards
 
 ### Rust-Specific Patterns
@@ -169,6 +173,19 @@ src/
 **Important**: When working with GitHub CLI operations in this project, use Jonathan Julian's zsh profile for authentication. This ensures proper GitHub CLI access for all operations.
 
 ## Development Workflow
+
+### Testing Philosophy
+
+**IMPORTANT: Always complete regression testing and manual testing before marking any feature as complete.**
+
+**GitHub CLI Authentication**: Always ensure proper authentication by using the correct Zsh profile with Jonathan Julian user before running any GitHub operations.
+
+Before declaring a feature done:
+1. **Unit Tests**: Ensure all unit tests pass
+2. **Integration Tests**: Run relevant integration tests
+3. **Manual Testing**: Test the feature manually with real data
+4. **Regression Testing**: Verify existing functionality still works
+5. **Edge Cases**: Test error conditions and edge cases
 
 ### Testing Commands
 
@@ -591,3 +608,126 @@ We're implementing the core sync functionality. Key areas:
 5. Optimize for performance
 
 Remember: This project emphasizes reliability and user experience. Always provide clear error messages and progress feedback for CLI operations.
+
+## GitHub Integration Lessons Learned
+
+### GitHub CLI Authentication
+
+**Critical Points for GitHub CLI Authentication:**
+
+1. **Environment Variables vs Keyring**: 
+   - The GITHUB_TOKEN environment variable takes precedence over keyring authentication
+   - Always `unset GITHUB_TOKEN` before switching accounts with `gh auth switch`
+   - The tool relies on GitHub CLI (`gh`) for authentication, not direct token usage
+
+2. **Multiple Accounts**:
+   - GitHub CLI can store multiple account credentials
+   - Use `gh auth switch -u <username>` to switch between accounts
+   - For this project, always use the JonathonJulian account for proper access
+
+3. **Required Scopes**:
+   - Project operations require the `project` scope
+   - Repository operations require the `repo` scope
+   - Use `gh auth refresh -h github.com -s project,repo` to update scopes
+
+4. **Authentication Workflow**:
+   ```bash
+   # Clear any environment tokens
+   unset GITHUB_TOKEN
+   
+   # Switch to correct account
+   gh auth switch -u JonathonJulian
+   
+   # Verify authentication
+   gh auth status
+   
+   # Refresh scopes if needed
+   gh auth refresh -h github.com -s project,repo,read:project
+   ```
+
+### GitHub Projects Field Mapping
+
+**Critical Discovery: Assignee vs Agent Field**
+
+1. **The Problem**:
+   - TaskMaster has an `assignee` field containing usernames like "swe-1-5dlabs"
+   - Initially mapped this to a field called "Assignee" in GitHub Projects
+   - This failed because GitHub Projects uses "Agent" for custom assignee fields
+
+2. **GitHub Project Fields**:
+   - Built-in fields: "Assignees" (for GitHub issue assignees)
+   - Custom fields we create: "Agent" (for TaskMaster assignee mapping)
+   - The confusion: "Assignees" is built-in, "Agent" is our custom field
+
+3. **Correct Field Mapping**:
+   ```rust
+   // In fields.rs - INCORRECT
+   self.field_mappings.insert(
+       "assignee".to_string(),
+       FieldMapping {
+           taskmaster_field: "assignee".to_string(),
+           github_field: "Assignee".to_string(),  // WRONG!
+           field_type: GitHubFieldType::Text,
+           transformer: None,
+       },
+   );
+   
+   // CORRECT - Should map to "Agent"
+   self.field_mappings.insert(
+       "assignee".to_string(),
+       FieldMapping {
+           taskmaster_field: "assignee".to_string(),
+           github_field: "Agent".to_string(),  // CORRECT!
+           field_type: GitHubFieldType::SingleSelect,
+           transformer: None,
+       },
+   );
+   ```
+
+4. **Field Types Matter**:
+   - "Agent" should be SingleSelect, not Text
+   - This allows for dropdown selection in GitHub UI
+   - Options must be created for each possible agent value
+
+### Common GitHub API Errors and Solutions
+
+1. **"Bad credentials" (401)**:
+   - Usually means GITHUB_TOKEN is set but invalid
+   - Solution: `unset GITHUB_TOKEN` and use keyring auth
+
+2. **"Could not resolve to DraftIssue"**:
+   - Happens when trying to update items created as real issues
+   - DraftIssue mutations don't work on real repository issues
+   - Need different update strategy for real issues vs draft issues
+
+3. **"Field not found"**:
+   - Check exact field names - they're case-sensitive
+   - Use GraphQL to list available fields
+   - Remember: built-in fields vs custom fields have different behaviors
+
+4. **Rate Limiting**:
+   - Implement exponential backoff
+   - Batch operations when possible
+   - Cache field IDs to reduce API calls
+
+### Best Practices
+
+1. **Always Test Field Mappings**:
+   - List project fields before assuming field names
+   - Verify field types match expected values
+   - Test with small datasets first
+
+2. **Handle Authentication Gracefully**:
+   - Check gh auth status before operations
+   - Provide clear error messages about auth issues
+   - Document required GitHub CLI setup
+
+3. **Debug GraphQL Errors**:
+   - Use `gh api graphql` to test queries directly
+   - Check node IDs are correct type (DraftIssue vs Issue)
+   - Verify field IDs haven't changed
+
+4. **State Management**:
+   - Track whether items are draft issues or real issues
+   - Store both project item ID and content ID
+   - Handle different update paths accordingly

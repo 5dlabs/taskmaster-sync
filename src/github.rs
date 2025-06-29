@@ -390,13 +390,64 @@ impl GitHubAPI {
         Ok(repo_id)
     }
 
-    /// Updates an existing project item
-    /// NOTE: This requires a DraftIssue ID, not a ProjectItem ID
-    /// TODO: Add method to get DraftIssue ID from ProjectItem ID
+    /// Updates an existing project item (handles both DraftIssues and repository Issues)
+    /// This method detects the content type and uses the appropriate mutation
     pub async fn update_project_item(
         &self,
         _project_id: &str,
         item_id: &str,
+        title: &str,
+        body: &str,
+    ) -> Result<()> {
+        // First, try to determine if this is a DraftIssue or repository Issue
+        // by querying the content type
+        let content_type = self.get_content_type(item_id).await?;
+
+        match content_type.as_str() {
+            "DraftIssue" => self.update_draft_issue(item_id, title, body).await,
+            "Issue" => {
+                // For repository issues, we can't update title/body directly
+                // We can only update project field values
+                tracing::warn!(
+                    "Cannot update title/body for repository Issue {}, only project fields can be updated",
+                    item_id
+                );
+                Ok(())
+            }
+            _ => Err(TaskMasterError::GitHubError(format!(
+                "Unknown content type '{content_type}' for item {item_id}"
+            ))),
+        }
+    }
+
+    /// Gets the content type of a project item or content node
+    async fn get_content_type(&self, item_id: &str) -> Result<String> {
+        let query = r"
+            query($id: ID!) {
+                node(id: $id) {
+                    __typename
+                }
+            }
+        ";
+
+        let variables = serde_json::json!({
+            "id": item_id
+        });
+
+        let response = self.execute_with_retry(query, variables).await?;
+
+        let typename = response["data"]["node"]["__typename"]
+            .as_str()
+            .unwrap_or("Unknown")
+            .to_string();
+
+        Ok(typename)
+    }
+
+    /// Updates a draft issue
+    async fn update_draft_issue(
+        &self,
+        draft_issue_id: &str,
         title: &str,
         body: &str,
     ) -> Result<()> {
@@ -417,7 +468,7 @@ impl GitHubAPI {
         ";
 
         let variables = serde_json::json!({
-            "draftIssueId": item_id,
+            "draftIssueId": draft_issue_id,
             "title": title,
             "body": body
         });
@@ -646,6 +697,49 @@ impl GitHubAPI {
             .to_string())
     }
 
+    /// Updates assignees for a repository issue
+    pub async fn update_issue_assignees(
+        &self,
+        issue_id: &str,
+        assignee_usernames: Vec<String>,
+    ) -> Result<()> {
+        // Convert usernames to user IDs
+        let mut assignee_ids = Vec::new();
+        for username in assignee_usernames {
+            if let Ok(user_id) = self.get_user_id(&username).await {
+                assignee_ids.push(user_id);
+            } else {
+                tracing::warn!("Could not resolve GitHub user: {}", username);
+            }
+        }
+
+        let mutation = r"
+            mutation($issueId: ID!, $assigneeIds: [ID!]!) {
+                updateIssue(input: {
+                    id: $issueId,
+                    assigneeIds: $assigneeIds
+                }) {
+                    issue {
+                        id
+                        assignees(first: 10) {
+                            nodes {
+                                login
+                            }
+                        }
+                    }
+                }
+            }
+        ";
+
+        let variables = serde_json::json!({
+            "issueId": issue_id,
+            "assigneeIds": assignee_ids
+        });
+
+        self.execute_with_retry(mutation, variables).await?;
+        Ok(())
+    }
+
     /// Creates a new option for a single select field
     pub async fn create_field_option(
         &self,
@@ -667,6 +761,24 @@ impl GitHubAPI {
         // Add existing options
         if let Some(existing_options) = &current_field.options {
             for option in existing_options {
+                // Skip if this is the option we're trying to add (avoid duplicates)
+                if option.name == option_name {
+                    continue;
+                }
+
+                // For Status field, insert QA Review before Done
+                if current_field.name == "Status"
+                    && option.name == "Done"
+                    && option_name == "QA Review"
+                {
+                    // Insert QA Review before Done
+                    all_options.push(serde_json::json!({
+                        "name": option_name,
+                        "color": color,
+                        "description": format!("{option_name} option")
+                    }));
+                }
+
                 all_options.push(serde_json::json!({
                     "name": option.name,
                     "color": option.color,
@@ -675,12 +787,18 @@ impl GitHubAPI {
             }
         }
 
-        // Add new option
-        all_options.push(serde_json::json!({
-            "name": option_name,
-            "color": color,
-            "description": format!("{option_name} option")
-        }));
+        // Add new option at the end only if it wasn't already inserted
+        let was_inserted = all_options
+            .iter()
+            .any(|opt| opt["name"].as_str() == Some(option_name));
+
+        if !was_inserted {
+            all_options.push(serde_json::json!({
+                "name": option_name,
+                "color": color,
+                "description": format!("{option_name} option")
+            }));
+        }
 
         let mutation = r"
             mutation($fieldId: ID!, $options: [ProjectV2SingleSelectFieldOptionInput!]!) {

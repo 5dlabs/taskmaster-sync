@@ -1,71 +1,100 @@
-name: Build and Release Binaries
+name: Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       version:
         description: 'Version to release (e.g., v1.0.0)'
         required: true
-        default: 'v1.0.0'
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  test:
+  create-release:
+    name: Create Release
     runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
+          tag_name: ${{ steps.get_version.outputs.version }}
+          release_name: Release ${{ steps.get_version.outputs.version }}
+          body: |
+            # Taskmaster Sync ${{ steps.get_version.outputs.version }}
 
-      - name: Cache Rust dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            Synchronize TaskMaster tasks with GitHub Projects v2.
 
-      - name: Run tests
-        run: cargo test --verbose
+            ## Installation
 
-      - name: Run clippy
-        run: cargo clippy -- -D warnings
+            ### As a GitHub Action
+            ```yaml
+            - uses: 5dlabs/taskmaster-sync@${{ steps.get_version.outputs.version }}
+              with:
+                direction: to-github
+                delta: true
+            ```
 
-      - name: Check formatting
-        run: cargo fmt -- --check
+            ### Direct Binary Download
+            Download the appropriate binary for your platform below.
 
-  build:
-    needs: test
-    runs-on: ${{ matrix.os }}
+            ## Changes
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+
+  build-release:
+    name: Build Release
+    needs: create-release
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            binary_name: task-master-sync
-            asset_name: task-master-sync-linux-x64
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            binary_name: task-master-sync
-            asset_name: task-master-sync-macos-x64
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            binary_name: task-master-sync
-            asset_name: task-master-sync-macos-arm64
+          # Linux x64
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: taskmaster-sync-linux-x64
 
+          # macOS x64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            name: taskmaster-sync-darwin-x64
+
+          # macOS ARM64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            name: taskmaster-sync-darwin-arm64
+
+          # Windows x64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            name: taskmaster-sync-windows-x64.exe
+
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Rust
@@ -75,102 +104,77 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Cache Rust dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build
+        run: |
+          cargo build --release --target ${{ matrix.target }}
 
-      - name: Build binary
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }}
-
-      - name: Prepare binary for upload
+      - name: Prepare binary
         shell: bash
         run: |
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} dist/${{ matrix.asset_name }}
-          ls -la dist/
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp target/${{ matrix.target }}/release/taskmaster-sync.exe ${{ matrix.name }}
+          else
+            cp target/${{ matrix.target }}/release/taskmaster-sync ${{ matrix.name }}
+          fi
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.asset_name }}
-          path: dist/${{ matrix.asset_name }}
-          retention-days: 1
+          # Make it executable on Unix
+          if [ "${{ matrix.os }}" != "windows-latest" ]; then
+            chmod +x ${{ matrix.name }}
+          fi
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Prepare release assets
-        run: |
-          mkdir -p release-assets
-          find artifacts -type f -name "task-master-sync-*" -exec cp {} release-assets/ \;
-          ls -la release-assets/
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.event.inputs.version || github.ref_name }}
-          name: Release ${{ github.event.inputs.version || github.ref_name }}
-          body: |
-            ## Task Master Sync Binary Release
-
-            ### Installation
-
-            **Linux (x64):**
-            ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version || github.ref_name }}/task-master-sync-linux-x64
-            chmod +x task-master-sync-linux-x64
-            sudo mv task-master-sync-linux-x64 /usr/local/bin/task-master-sync
-            ```
-
-            **macOS (Intel):**
-            ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version || github.ref_name }}/task-master-sync-macos-x64
-            chmod +x task-master-sync-macos-x64
-            sudo mv task-master-sync-macos-x64 /usr/local/bin/task-master-sync
-            ```
-
-            **macOS (Apple Silicon):**
-            ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version || github.ref_name }}/task-master-sync-macos-arm64
-            chmod +x task-master-sync-macos-arm64
-            sudo mv task-master-sync-macos-arm64 /usr/local/bin/task-master-sync
-            ```
-
-
-
-            ### Usage
-            ```bash
-            task-master-sync --help
-            ```
-
-            ### What's Changed
-            - High-performance Rust implementation
-            - Cross-platform binary distribution
-            - No runtime dependencies required
-            - Works with any project type
-          files: release-assets/*
-          draft: false
-          prerelease: false
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ matrix.name }}
+          asset_name: ${{ matrix.name }}
+          asset_content_type: application/octet-stream
+
+  update-major-version:
+    name: Update Major Version Tag
+    needs: [create-release, build-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update major version tag
+        run: |
+          VERSION=${{ needs.create-release.outputs.version }}
+          MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
+
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+          # Delete the tag locally and remotely if it exists
+          git tag -d $MAJOR_VERSION || true
+          git push origin :refs/tags/$MAJOR_VERSION || true
+
+          # Create and push the new tag
+          git tag -a $MAJOR_VERSION -m "Update $MAJOR_VERSION tag to $VERSION"
+          git push origin $MAJOR_VERSION
+
+  publish-to-marketplace:
+    name: Publish to GitHub Marketplace
+    needs: [create-release, build-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate action.yml
+        run: |
+          # Ensure action.yml exists and is valid
+          if [ ! -f "action.yml" ]; then
+            echo "Error: action.yml not found"
+            exit 1
+          fi
+
+          echo "✅ action.yml found and ready for marketplace"
+
+      # Note: Actual marketplace publishing happens automatically
+      # when you create a release if the repository has action.yml

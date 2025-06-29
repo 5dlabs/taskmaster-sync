@@ -40,7 +40,20 @@ A high-performance Rust CLI tool that synchronizes [Taskmaster](https://github.c
 
 ## 🛠️ Installation
 
-### Option 1: Download Pre-built Binary (Recommended)
+### Option 1: As a GitHub Action (Recommended for CI/CD)
+
+The easiest way to use taskmaster-sync in your projects is as a GitHub Action:
+
+```yaml
+- uses: 5dlabs/taskmaster-sync@v1
+  with:
+    direction: to-github
+    delta: true
+```
+
+See [.github/workflows/example-usage.yml.example](.github/workflows/example-usage.yml.example) for complete workflow examples.
+
+### Option 2: Download Pre-built Binary (For Local Use)
 
 Download the latest release from [GitHub Releases](https://github.com/5dlabs/taskmaster-sync/releases/latest):
 
@@ -61,7 +74,7 @@ chmod +x task-master-sync
 sudo mv task-master-sync /usr/local/bin/
 ```
 
-### Option 2: Build from Source
+### Option 3: Build from Source
 
 ```bash
 # Clone the repository
@@ -89,7 +102,7 @@ sudo cp target/release/task-master-sync /usr/local/bin/
    ```bash
    # Create a new project
    task-master-sync create-project "My TaskMaster Project" --org your-org
-   
+
    # Set up required fields (replace 123 with your project number)
    task-master-sync setup-project 123
    ```
@@ -109,7 +122,7 @@ sudo cp target/release/task-master-sync /usr/local/bin/
    ```bash
    # Check sync status
    task-master-sync status
-   
+
    # Clean up any duplicates
    task-master-sync clean-duplicates 123 --delete
    ```

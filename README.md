@@ -327,6 +327,28 @@ cargo clippy
 cargo audit
 ```
 
+### Auto-Formatting Setup
+
+**Automatic CI Formatting:**
+- GitHub Actions automatically formats code on every PR
+- Commits formatting changes back to the PR if needed
+- Uses `[skip ci]` to avoid infinite loops
+
+**Local Pre-Commit Hook:**
+```bash
+# Install pre-commit hook for automatic formatting
+./scripts/setup-hooks.sh
+
+# The hook will automatically:
+# • Format code with cargo fmt
+# • Run clippy linting
+# • Run tests
+# • Add formatted files to commit
+
+# To bypass temporarily (not recommended):
+git commit --no-verify
+```
+
 ### Debugging
 
 ```bash

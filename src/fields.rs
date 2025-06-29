@@ -142,7 +142,7 @@ impl FieldManager {
                 transformer: None,
             },
         );
-        
+
         // Map assignee
         self.field_mappings.insert(
             "assignee".to_string(),
@@ -202,15 +202,16 @@ impl FieldManager {
         // Map priority with option ID lookup
         if let Some(mapping) = self.field_mappings.get("priority") {
             if let Some(priority) = &task.priority {
-                let priority_value = if let Some(FieldTransformer::PriorityMapper) = &mapping.transformer {
-                    self.transform_priority(priority)?
-                } else {
-                    priority.clone()
-                };
+                let priority_value =
+                    if let Some(FieldTransformer::PriorityMapper) = &mapping.transformer {
+                        self.transform_priority(priority)?
+                    } else {
+                        priority.clone()
+                    };
                 github_fields.insert(mapping.github_field.clone(), Value::String(priority_value));
             }
         }
-        
+
         // Note: Assignee is handled differently - it's set directly on the GitHub issue,
         // not as a custom field in the project. This is handled in the GitHub API calls.
 
@@ -305,12 +306,9 @@ impl FieldManager {
 
     /// Updates the list of GitHub fields
     pub fn set_github_fields(&mut self, fields: Vec<CustomField>) {
-        self.github_fields = fields
-            .into_iter()
-            .map(|f| (f.name.clone(), f))
-            .collect();
+        self.github_fields = fields.into_iter().map(|f| (f.name.clone(), f)).collect();
     }
-    
+
     /// Gets the option ID for a single select field value
     pub fn get_option_id(&self, field_name: &str, option_name: &str) -> Option<String> {
         if let Some(field) = self.github_fields.get(field_name) {
@@ -324,7 +322,7 @@ impl FieldManager {
         }
         None
     }
-    
+
     /// Creates option if it doesn't exist for a single select field
     pub async fn ensure_option_exists(
         &mut self,
@@ -337,25 +335,28 @@ impl FieldManager {
         if let Some(option_id) = self.get_option_id(field_name, option_name) {
             return Ok(option_id);
         }
-        
+
         // Option doesn't exist, create it
         if let Some(field) = self.github_fields.get(field_name) {
-            let option_id = github_api.create_field_option(
-                project_id,
-                &field.id,
-                option_name,
-                "#f0f0f0" // Default color
-            ).await?;
-            
+            let option_id = github_api
+                .create_field_option(
+                    project_id,
+                    &field.id,
+                    option_name,
+                    "#f0f0f0", // Default color
+                )
+                .await?;
+
             // Refresh the field definition to include new option
             let updated_fields = github_api.get_project_fields(project_id).await?;
             self.set_github_fields(updated_fields);
-            
+
             Ok(option_id)
         } else {
-            Err(crate::error::TaskMasterError::ConfigError(
-                format!("Field '{}' not found", field_name)
-            ))
+            Err(crate::error::TaskMasterError::ConfigError(format!(
+                "Field '{}' not found",
+                field_name
+            )))
         }
     }
 
@@ -397,9 +398,7 @@ impl FieldManager {
 
     /// Gets the GitHub field ID for a field name
     pub fn get_github_field_id(&self, field_name: &str) -> Option<String> {
-        self.github_fields
-            .get(field_name)
-            .map(|f| f.id.clone())
+        self.github_fields.get(field_name).map(|f| f.id.clone())
     }
 }
 

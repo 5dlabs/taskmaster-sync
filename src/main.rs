@@ -77,10 +77,16 @@ async fn main() -> Result<()> {
             subtasks_in_body: _,
         } => {
             tracing::info!("Syncing tag '{}' to project '{}'", tag, project);
-            
+
             // Initialize sync engine
             let config_path = ".taskmaster/sync-config.json";
-            let mut sync_engine = match task_master_sync::sync::SyncEngine::new(config_path, &tag, project.parse().unwrap_or(0)).await {
+            let mut sync_engine = match task_master_sync::sync::SyncEngine::new(
+                config_path,
+                &tag,
+                project.parse().unwrap_or(0),
+            )
+            .await
+            {
                 Ok(engine) => engine,
                 Err(e) => {
                     eprintln!("Failed to initialize sync engine: {}", e);
@@ -105,14 +111,14 @@ async fn main() -> Result<()> {
                     println!("   Updated: {}", result.stats.updated);
                     println!("   Deleted: {}", result.stats.deleted);
                     println!("   Skipped: {}", result.stats.skipped);
-                    
+
                     if !result.stats.errors.is_empty() {
                         println!("   Errors: {}", result.stats.errors.len());
                         for error in &result.stats.errors {
                             eprintln!("     - {}", error);
                         }
                     }
-                    
+
                     if dry_run {
                         println!("\n🔍 This was a dry run - no changes were made to GitHub");
                     }

@@ -14,7 +14,7 @@ use crate::models::github::{FieldValueContent, GitHubProjectItem, Project, Proje
 use crate::models::task::Task;
 use crate::progress::{ProgressTracker, SyncStats};
 use crate::state::StateTracker;
-use crate::subtasks::{SubtaskHandler, SubtaskConfig};
+use crate::subtasks::{SubtaskConfig, SubtaskHandler};
 use crate::taskmaster::TaskMasterReader;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -296,16 +296,22 @@ impl SyncEngine {
 
         // Create the task body (only include simple subtasks inline)
         let body = self.format_task_body_enhanced(task);
-        
+
         // Extract assignees
         let assignees = task.assignee.as_ref().map(|a| vec![a.clone()]);
-        
+
         // Check if we should create a repository issue or draft issue
         let result = if let Some(mapping) = &self.project_mapping {
             if let Some(repository) = &mapping.repository {
                 // Create repository issue and add to project
                 self.github
-                    .create_project_item_with_issue(&project_id, repository, &task.title, &body, assignees)
+                    .create_project_item_with_issue(
+                        &project_id,
+                        repository,
+                        &task.title,
+                        &body,
+                        assignees,
+                    )
                     .await?
             } else {
                 // Create draft issue
@@ -322,23 +328,29 @@ impl SyncEngine {
 
         // Process subtasks - create separate issues for complex ones
         if self.subtasks.is_enhanced_mode() && !task.subtasks.is_empty() {
-            let repository = self.project_mapping.as_ref().and_then(|m| m.repository.as_deref());
-            
-            let _subtask_results = self.subtasks.process_subtasks(
-                task,
-                &result.project_item_id,
-                &self.github,
-                &project_id,
-                repository,
-                &self.subtask_config,
-            ).await?;
-            
+            let repository = self
+                .project_mapping
+                .as_ref()
+                .and_then(|m| m.repository.as_deref());
+
+            let _subtask_results = self
+                .subtasks
+                .process_subtasks(
+                    task,
+                    &result.project_item_id,
+                    &self.github,
+                    &project_id,
+                    repository,
+                    &self.subtask_config,
+                )
+                .await?;
+
             // TODO: Store subtask results in state for tracking
         }
 
         // Map task fields to GitHub fields
         let mut field_values = self.fields.map_task_to_github(task)?;
-        
+
         // Add hierarchy fields
         self.subtasks.add_hierarchy_fields(&mut field_values, task);
 
@@ -346,7 +358,9 @@ impl SyncEngine {
         for (field_name, value) in field_values {
             if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
                 // Format value based on field type with option ID lookup for single select
-                let formatted_value = self.format_field_value_enhanced(&field_name, value, &project_id).await?;
+                let formatted_value = self
+                    .format_field_value_enhanced(&field_name, value, &project_id)
+                    .await?;
 
                 self.github
                     .update_field_value(
@@ -388,14 +402,16 @@ impl SyncEngine {
 
         // Update fields
         let mut field_values = self.fields.map_task_to_github(task)?;
-        
+
         // Add hierarchy fields
         self.subtasks.add_hierarchy_fields(&mut field_values, task);
 
         for (field_name, value) in field_values {
             if let Some(field_id) = self.fields.get_github_field_id(&field_name) {
-                let formatted_value = self.format_field_value_enhanced(&field_name, value, &project_id).await?;
-                
+                let formatted_value = self
+                    .format_field_value_enhanced(&field_name, value, &project_id)
+                    .await?;
+
                 self.github
                     .update_field_value(&project_id, &github_item.id, &field_id, formatted_value)
                     .await?;
@@ -411,7 +427,7 @@ impl SyncEngine {
     fn format_task_body(&self, task: &Task) -> String {
         self.format_task_body_enhanced(task)
     }
-    
+
     /// Formats task body for GitHub with enhanced subtask handling
     fn format_task_body_enhanced(&self, task: &Task) -> String {
         let mut body = task.description.clone();
@@ -426,23 +442,28 @@ impl SyncEngine {
 
         if !task.subtasks.is_empty() {
             body.push_str("\n\n## Subtasks\n");
-            
+
             let mut separate_subtasks = Vec::new();
             let mut inline_subtasks = Vec::new();
-            
+
             // Separate subtasks into those getting separate issues vs inline
             for subtask in &task.subtasks {
-                if self.subtasks.is_enhanced_mode() && 
-                   self.should_create_separate_subtask_issue(subtask) {
+                if self.subtasks.is_enhanced_mode()
+                    && self.should_create_separate_subtask_issue(subtask)
+                {
                     separate_subtasks.push(subtask);
                 } else {
                     inline_subtasks.push(subtask);
                 }
             }
-            
+
             // Add inline subtasks as checklist
             for (i, subtask) in inline_subtasks.iter().enumerate() {
-                let checkbox = if subtask.status == "done" { "[x]" } else { "[ ]" };
+                let checkbox = if subtask.status == "done" {
+                    "[x]"
+                } else {
+                    "[ ]"
+                };
                 body.push_str(&format!(
                     "{}. {} {} - {}\n",
                     i + 1,
@@ -451,7 +472,7 @@ impl SyncEngine {
                     subtask.status
                 ));
             }
-            
+
             // Reference separate subtask issues
             if !separate_subtasks.is_empty() {
                 body.push_str("\n### Complex Subtasks (Separate Issues)\n");
@@ -466,37 +487,37 @@ impl SyncEngine {
 
         body
     }
-    
+
     /// Determines if a subtask should get its own GitHub issue
     fn should_create_separate_subtask_issue(&self, subtask: &Task) -> bool {
         // Don't create separate issues for very simple subtasks
         if subtask.description.len() < self.subtask_config.complexity_threshold {
             return false;
         }
-        
+
         // Create separate issue if subtask has its own subtasks
         if self.subtask_config.create_separate_if_has_subtasks && !subtask.subtasks.is_empty() {
             return true;
         }
-        
+
         // Create separate issue if subtask has an assignee
         if self.subtask_config.create_separate_if_has_assignee && subtask.assignee.is_some() {
             return true;
         }
-        
+
         // Create separate issue if subtask is complex
         if self.subtask_config.create_separate_if_complex {
             // Consider it complex if it has details or test strategy
             if subtask.details.is_some() || subtask.test_strategy.is_some() {
                 return true;
             }
-            
+
             // Or if description is long
             if subtask.description.len() > self.subtask_config.complexity_threshold {
                 return true;
             }
         }
-        
+
         false
     }
 
@@ -517,7 +538,7 @@ impl SyncEngine {
             _ => serde_json::json!({ "text": value_str }),
         }
     }
-    
+
     /// Enhanced field value formatting with option ID lookup for single select fields
     async fn format_field_value_enhanced(
         &mut self,
@@ -526,7 +547,7 @@ impl SyncEngine {
         project_id: &str,
     ) -> Result<Value> {
         let value_str = value.as_str().unwrap_or("");
-        
+
         if value_str.is_empty() {
             return Ok(serde_json::json!({ "text": "" }));
         }
@@ -535,17 +556,14 @@ impl SyncEngine {
         match field_name {
             "Priority" | "Status" => {
                 // Try to get or create the option ID
-                match self.fields.ensure_option_exists(
-                    &self.github,
-                    project_id,
-                    field_name,
-                    value_str,
-                ).await {
-                    Ok(option_id) => {
-                        Ok(serde_json::json!({
-                            "singleSelectOptionId": option_id
-                        }))
-                    }
+                match self
+                    .fields
+                    .ensure_option_exists(&self.github, project_id, field_name, value_str)
+                    .await
+                {
+                    Ok(option_id) => Ok(serde_json::json!({
+                        "singleSelectOptionId": option_id
+                    })),
                     Err(_) => {
                         // Fallback to text if option creation fails
                         Ok(serde_json::json!({ "text": value_str }))

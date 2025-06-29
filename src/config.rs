@@ -123,7 +123,6 @@ impl ConfigManager {
         );
     }
 
-
     /// Updates last sync time for a tag
     pub fn update_last_sync(&mut self, tag: &str) {
         self.config

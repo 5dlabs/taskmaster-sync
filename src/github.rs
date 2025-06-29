@@ -194,10 +194,14 @@ impl GitHubAPI {
         assignees: Option<Vec<String>>,
     ) -> Result<CreateItemResult> {
         // First create the repository issue
-        let issue_result = self.create_repository_issue(repository, title, body, assignees).await?;
+        let issue_result = self
+            .create_repository_issue(repository, title, body, assignees)
+            .await?;
 
         // Then add it to the project
-        let project_item_result = self.add_issue_to_project(project_id, &issue_result.issue_id).await?;
+        let project_item_result = self
+            .add_issue_to_project(project_id, &issue_result.issue_id)
+            .await?;
 
         Ok(CreateItemResult {
             project_item_id: project_item_result.project_item_id,
@@ -381,10 +385,7 @@ impl GitHubAPI {
         let repo_id = response["data"]["repository"]["id"]
             .as_str()
             .ok_or_else(|| {
-                TaskMasterError::GitHubError(format!(
-                    "Repository {}/{} not found",
-                    owner, name
-                ))
+                TaskMasterError::GitHubError(format!("Repository {}/{} not found", owner, name))
             })?
             .to_string();
 
@@ -688,7 +689,9 @@ impl GitHubAPI {
         let response = self.execute_with_retry(mutation, variables).await?;
 
         // Find the newly created option ID
-        if let Some(options) = response["data"]["updateProjectV2Field"]["projectV2Field"]["options"].as_array() {
+        if let Some(options) =
+            response["data"]["updateProjectV2Field"]["projectV2Field"]["options"].as_array()
+        {
             for option in options {
                 if option["name"].as_str() == Some(option_name) {
                     return Ok(option["id"].as_str().unwrap_or("").to_string());
@@ -696,9 +699,10 @@ impl GitHubAPI {
             }
         }
 
-        Err(TaskMasterError::GitHubError(
-            format!("Failed to create option '{}' for field", option_name)
-        ))
+        Err(TaskMasterError::GitHubError(format!(
+            "Failed to create option '{}' for field",
+            option_name
+        )))
     }
 
     /// Executes a GraphQL query with retry logic

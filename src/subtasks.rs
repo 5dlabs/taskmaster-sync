@@ -53,7 +53,7 @@ impl SubtaskHandler {
         }
     }
 
-    /// Creates a new subtask handler with enhanced mode disabled 
+    /// Creates a new subtask handler with enhanced mode disabled
     pub fn new_basic() -> Self {
         Self {
             parent_child_map: HashMap::new(),
@@ -70,7 +70,7 @@ impl SubtaskHandler {
     /// Builds a task hierarchy from flat task list
     pub fn build_hierarchy(&self, tasks: Vec<Task>) -> Vec<TaskNode> {
         let mut nodes = Vec::new();
-        
+
         for task in tasks {
             let node = TaskNode {
                 level: 0, // Top-level tasks
@@ -81,14 +81,14 @@ impl SubtaskHandler {
             };
             nodes.push(node);
         }
-        
+
         nodes
     }
 
     /// Flattens a task hierarchy into a list
     pub fn flatten_hierarchy(&self, nodes: Vec<TaskNode>) -> Vec<Task> {
         let mut tasks = Vec::new();
-        
+
         for node in nodes {
             tasks.push(node.task.clone());
             // Recursively flatten children
@@ -97,7 +97,7 @@ impl SubtaskHandler {
                 tasks.extend(child_tasks);
             }
         }
-        
+
         tasks
     }
 
@@ -112,32 +112,29 @@ impl SubtaskHandler {
         config: &SubtaskConfig,
     ) -> Result<Vec<CreateItemResult>> {
         let mut results = Vec::new();
-        
+
         if !self.enhanced_mode {
             return Ok(results);
         }
-        
+
         for subtask in &task.subtasks {
             if self.should_create_separate_issue(subtask, config) {
-                let result = self.create_subtask_issue(
-                    task,
-                    subtask,
-                    github,
-                    project_id,
-                    repository,
-                ).await?;
-                
+                let result = self
+                    .create_subtask_issue(task, subtask, github, project_id, repository)
+                    .await?;
+
                 // Record the relationship
-                self.github_item_map.insert(subtask.id.clone(), result.project_item_id.clone());
+                self.github_item_map
+                    .insert(subtask.id.clone(), result.project_item_id.clone());
                 self.parent_child_map
                     .entry(task.id.clone())
                     .or_insert_with(Vec::new)
                     .push(subtask.id.clone());
-                
+
                 results.push(result);
             }
         }
-        
+
         Ok(results)
     }
 
@@ -152,25 +149,27 @@ impl SubtaskHandler {
     ) -> Result<CreateItemResult> {
         // Build subtask title with parent context
         let title = format!("{} [{}]", subtask.title, parent.title);
-        
+
         // Build subtask body with parent reference
         let mut body = subtask.description.clone();
         body.push_str(&format!("\n\n**Parent Task:** {}", parent.title));
-        
+
         if let Some(details) = &subtask.details {
             body.push_str(&format!("\n\n## Details\n{}", details));
         }
-        
+
         if let Some(test_strategy) = &subtask.test_strategy {
             body.push_str(&format!("\n\n## Test Strategy\n{}", test_strategy));
         }
-        
-        // Extract assignees  
+
+        // Extract assignees
         let assignees = subtask.assignee.as_ref().map(|a| vec![a.clone()]);
-        
+
         // Create the issue
         if let Some(repo) = repository {
-            github.create_project_item_with_issue(project_id, repo, &title, &body, assignees).await
+            github
+                .create_project_item_with_issue(project_id, repo, &title, &body, assignees)
+                .await
         } else {
             github.create_project_item(project_id, &title, &body).await
         }
@@ -182,30 +181,30 @@ impl SubtaskHandler {
         if subtask.description.len() < config.complexity_threshold {
             return false;
         }
-        
+
         // Create separate issue if subtask has its own subtasks
         if config.create_separate_if_has_subtasks && !subtask.subtasks.is_empty() {
             return true;
         }
-        
+
         // Create separate issue if subtask has an assignee
         if config.create_separate_if_has_assignee && subtask.assignee.is_some() {
             return true;
         }
-        
+
         // Create separate issue if subtask is complex
         if config.create_separate_if_complex {
             // Consider it complex if it has details or test strategy
             if subtask.details.is_some() || subtask.test_strategy.is_some() {
                 return true;
             }
-            
+
             // Or if description is long
             if subtask.description.len() > config.complexity_threshold {
                 return true;
             }
         }
-        
+
         false
     }
 
@@ -259,12 +258,12 @@ impl SubtaskHandler {
         // Add hierarchy level field
         let hierarchy_info = self.format_hierarchy_field(task);
         fields.insert("Hierarchy".to_string(), serde_json::json!(hierarchy_info));
-        
+
         // Add parent reference if this is a subtask
         if let Some(parent_id) = self.get_parent_id(&task.id) {
             fields.insert("Parent Task".to_string(), serde_json::json!(parent_id));
         }
-        
+
         // Add child count if this is a parent
         let child_count = task.subtasks.len();
         if child_count > 0 {
@@ -278,23 +277,28 @@ impl SubtaskHandler {
         for task in tasks {
             let mut visited = std::collections::HashSet::new();
             if self.has_circular_reference(&task.id, &mut visited) {
-                return Err(crate::error::TaskMasterError::InvalidTaskFormat(
-                    format!("Circular reference detected in task hierarchy starting with {}", task.id)
-                ));
+                return Err(crate::error::TaskMasterError::InvalidTaskFormat(format!(
+                    "Circular reference detected in task hierarchy starting with {}",
+                    task.id
+                )));
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Checks for circular references in the hierarchy
-    fn has_circular_reference(&self, task_id: &str, visited: &mut std::collections::HashSet<String>) -> bool {
+    fn has_circular_reference(
+        &self,
+        task_id: &str,
+        visited: &mut std::collections::HashSet<String>,
+    ) -> bool {
         if visited.contains(task_id) {
             return true;
         }
-        
+
         visited.insert(task_id.to_string());
-        
+
         // Check all children
         if let Some(child_ids) = self.parent_child_map.get(task_id) {
             for child_id in child_ids {
@@ -303,7 +307,7 @@ impl SubtaskHandler {
                 }
             }
         }
-        
+
         visited.remove(task_id);
         false
     }
@@ -312,7 +316,7 @@ impl SubtaskHandler {
     pub fn default_config() -> SubtaskConfig {
         SubtaskConfig {
             create_separate_if_has_subtasks: true,
-            create_separate_if_has_assignee: true, 
+            create_separate_if_has_assignee: true,
             create_separate_if_complex: true,
             complexity_threshold: 100, // characters
         }

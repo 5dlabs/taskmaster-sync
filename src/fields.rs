@@ -143,13 +143,13 @@ impl FieldManager {
             },
         );
 
-        // Map assignee
+        // Map assignee to Agent field (custom field in GitHub Projects)
         self.field_mappings.insert(
             "assignee".to_string(),
             FieldMapping {
                 taskmaster_field: "assignee".to_string(),
-                github_field: "Assignee".to_string(),
-                field_type: GitHubFieldType::Text,
+                github_field: "Agent".to_string(),
+                field_type: GitHubFieldType::SingleSelect,
                 transformer: None,
             },
         );
@@ -219,8 +219,15 @@ impl FieldManager {
         //     }
         // }
 
-        // Note: Assignee is handled differently - it's set directly on the GitHub issue,
-        // not as a custom field in the project. This is handled in the GitHub API calls.
+        // Map assignee to Agent field
+        if let Some(mapping) = self.field_mappings.get("assignee") {
+            if let Some(assignee) = &task.assignee {
+                github_fields.insert(
+                    mapping.github_field.clone(),
+                    Value::String(assignee.clone()),
+                );
+            }
+        }
 
         // Map dependencies
         if let Some(mapping) = self.field_mappings.get("dependencies") {

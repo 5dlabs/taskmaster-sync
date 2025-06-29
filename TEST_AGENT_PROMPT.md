@@ -129,13 +129,13 @@ jobs:
       - name: Sync Tasks to GitHub Project
         id: sync
         uses: 5dlabs/taskmaster-sync@v1
-        with:
-          project-number: YOUR_PROJECT_NUMBER  # Replace with actual project #
+        # No project-number = auto-create new project!
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Show Results
         run: |
+          echo "Project: #${{ steps.sync.outputs.project-number-used }}"
           echo "Created: ${{ steps.sync.outputs.created }}"
           echo "Updated: ${{ steps.sync.outputs.updated }}"
           echo "Deleted: ${{ steps.sync.outputs.deleted }}"
@@ -261,16 +261,17 @@ jobs:
 
 ## GitHub Project Setup
 
-**Before testing, create a GitHub Project:**
+**No manual setup required!** The GitHub Action will automatically:
 
-1. Go to your GitHub organization/repository
-2. Create a new Project (Projects v2)
-3. Add these custom fields:
+1. ✨ Create a new GitHub Project when first run
+2. 🔧 Set up all required custom fields:
    - **TM_ID** (Text) - for TaskMaster task IDs
    - **Agent** (Single Select) - for assignee mapping
    - **Priority** (Single Select) - High, Medium, Low
-4. Add **QA Review** option to the Status field
-5. Note the project number (visible in URL)
+3. 📊 Add **QA Review** option to the Status field
+4. 🔄 Start syncing your tasks immediately
+
+If you want to use an existing project, just specify the project number in the action.
 
 ## Complete Development Lifecycle Simulation
 
@@ -279,8 +280,12 @@ jobs:
 ### Phase 1: Project Planning (PM Agent)
 1. **Initial Setup**: All tasks start as "pending" status
 2. **Push to main**: Trigger initial sync 
-3. **Verify**: All 6 tasks appear in GitHub Project as "Todo" status
-4. **Expected Results**: Created: 6, Updated: 0, Status: All "Todo"
+3. **Auto-Creation**: GitHub Action creates new project automatically
+4. **Verify**: All 6 tasks appear in GitHub Project as "Todo" status
+5. **Expected Results**: 
+   - New project created with all required fields
+   - Created: 6, Updated: 0, Status: All "Todo"
+   - Note the auto-generated project number for future reference
 
 ### Phase 2: Development Kickoff (Multiple Agents)
 1. **Frontend Dev starts**: Update `frontend-user-auth` status to "in-progress"

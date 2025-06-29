@@ -45,11 +45,20 @@ A high-performance Rust CLI tool that synchronizes [Taskmaster](https://github.c
 The easiest way to use taskmaster-sync in your projects is as a GitHub Action:
 
 ```yaml
+# Auto-create a new project if none exists
+- uses: 5dlabs/taskmaster-sync@v1
+
+# Or specify an existing project number
 - uses: 5dlabs/taskmaster-sync@v1
   with:
-    direction: to-github
-    delta: true
+    project-number: 123
 ```
+
+The action will automatically:
+- ✨ Create a new GitHub Project if no project number is specified
+- 🔧 Set up required custom fields (TM_ID, Agent, Priority)
+- 📊 Add "QA Review" option to the Status field
+- 🔄 Sync all TaskMaster tasks to the project
 
 See [.github/workflows/example-usage.yml.example](.github/workflows/example-usage.yml.example) for complete workflow examples.
 
@@ -134,6 +143,9 @@ sudo cp target/release/task-master-sync /usr/local/bin/
 ```bash
 # Sync specific tag to GitHub Project
 task-master-sync sync <TAG> <PROJECT_NUMBER> [--dry-run] [--full-sync]
+
+# Auto-create a new project (use 0 as project number)
+task-master-sync sync master 0
 
 # Create and set up a new GitHub Project
 task-master-sync create-project <TITLE> [--org <ORG>] [--description <DESC>]

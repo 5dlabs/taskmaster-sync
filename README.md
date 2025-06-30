@@ -59,6 +59,7 @@ The action will automatically:
 - 🔧 Set up required custom fields (TM_ID, Agent, Priority)
 - 📊 Add "QA Review" option to the Status field
 - 🔄 Sync all TaskMaster tasks to the project
+- 💾 Commit updated configuration back to your repository
 
 See [.github/workflows/example-usage.yml.example](.github/workflows/example-usage.yml.example) for complete workflow examples.
 

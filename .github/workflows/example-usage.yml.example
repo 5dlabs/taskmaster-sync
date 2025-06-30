@@ -19,6 +19,11 @@ jobs:
   sync-tasks:
     name: Sync TaskMaster to GitHub Project
     runs-on: ubuntu-latest
+    
+    # Required permissions for auto-committing config changes
+    permissions:
+      contents: write  # To commit and push config updates
+      projects: write  # To create and update GitHub Projects
 
     steps:
       - name: Checkout
@@ -36,6 +41,9 @@ jobs:
 
           # Project number (omit to auto-create, or specify existing)
           # project-number: 123
+
+          # Auto-commit config changes (default: true)
+          # auto-commit-config: 'true'
 
           # GitHub token (defaults to GITHUB_TOKEN)
           # github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -110,102 +110,45 @@ impl SyncEngine {
 
         // Get or create project
         let project = if project_number == 0 {
-            // Special case: 0 means auto-create
-            tracing::info!("Auto-creating new project...");
-
-            // Try to detect repository from GitHub Actions environment or git remote
-            let detected_repository = Self::detect_repository();
-
-            // Determine project title from tag and config
-            let title = if let Some(mapping) = config.get_project_mapping(tag) {
-                format!(
-                    "TaskMaster - {} ({})",
-                    mapping
-                        .repository
-                        .as_ref()
-                        .map(|r| r.split('/').last().unwrap_or(tag))
-                        .unwrap_or(tag),
-                    tag
-                )
-            } else if let Some(ref repo) = detected_repository {
-                format!(
-                    "TaskMaster - {} ({})",
-                    repo.split('/').last().unwrap_or(tag),
-                    tag
-                )
-            } else {
-                format!("TaskMaster Project - {}", tag)
-            };
-
-            // Use repository from config or detected
-            let repository = config
-                .get_project_mapping(tag)
-                .and_then(|m| m.repository.as_ref())
-                .map(|s| s.as_str())
-                .or(detected_repository.as_deref());
-
-            // Clone repository for later use
-            let repository_clone = repository.map(|s| s.to_string());
-
-            let created_project = github
-                .create_project(
-                    &title,
-                    Some("Auto-created by taskmaster-sync GitHub Action"),
-                    repository,
-                )
-                .await?;
-
-            tracing::info!(
-                "Created project '{}' with number #{}",
-                created_project.title,
-                created_project.number
-            );
-            if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
-                println!(
-                    "🎉 Created new GitHub Project: {} (#{}) ",
-                    created_project.title, created_project.number
+            // Special case: 0 means auto-create, but first check if project already exists for this tag
+            if let Some(existing_mapping) = config.get_project_mapping(tag) {
+                tracing::info!(
+                    "Found existing project mapping for tag '{}': project #{}",
+                    tag,
+                    existing_mapping.project_number
                 );
-            }
-            if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
-                println!("   URL: {}", created_project.url);
-            }
-
-            // Set up required fields
-            Self::setup_project_fields(&github, &created_project.id).await?;
-
-            // Update config with the new project number and repository
-            let needs_new_mapping = config.get_project_mapping(tag).is_none();
-
-            if needs_new_mapping {
-                // Create new mapping if it doesn't exist
-                let new_mapping = crate::models::config::ProjectMapping {
-                    project_number: created_project.number,
-                    project_id: created_project.id.clone(),
-                    repository: repository_clone.clone(),
-                    subtask_mode: crate::models::config::SubtaskMode::Nested,
-                    field_mappings: None,
-                };
-                config.add_project_mapping(tag.to_string(), new_mapping);
-            } else {
-                // Update existing mapping
-                if let Some(mapping) = config.get_project_mapping_mut(tag) {
-                    mapping.project_number = created_project.number;
-                    mapping.project_id = created_project.id.clone();
-                    // Save repository if it was detected and not already set
-                    if mapping.repository.is_none() && repository_clone.is_some() {
-                        mapping.repository = repository_clone.clone();
+                
+                // Try to get the existing project to verify it still exists
+                match github.get_project(existing_mapping.project_number).await {
+                    Ok(existing_project) => {
+                        tracing::info!("Using existing project #{}", existing_project.number);
+                        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                            println!(
+                                "✅ Using existing project: {} (#{})",
+                                existing_project.title, existing_project.number
+                            );
+                        }
+                        existing_project
+                    }
+                    Err(_) => {
+                        tracing::warn!(
+                            "Configured project #{} no longer exists, creating new project...",
+                            existing_mapping.project_number
+                        );
+                        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+                            println!(
+                                "⚠️  Configured project #{} not found, creating new project...",
+                                existing_mapping.project_number
+                            );
+                        }
+                        // Fall through to creation logic
+                        Self::create_new_project(&github, &mut config, tag).await?
                     }
                 }
+            } else {
+                tracing::info!("No existing project mapping for tag '{}', auto-creating new project...", tag);
+                Self::create_new_project(&github, &mut config, tag).await?
             }
-            config.save().await?;
-            if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
-                println!(
-                    "   ✅ Updated config with project number: {}",
-                    created_project.number
-                );
-            }
-
-            created_project
         } else {
             // Try to get existing project
             match github.get_project(project_number).await {
@@ -1202,6 +1145,107 @@ impl SyncEngine {
         }
 
         None
+    }
+
+    /// Creates a new project with proper setup and configuration update
+    async fn create_new_project(
+        github: &GitHubAPI,
+        config: &mut ConfigManager,
+        tag: &str,
+    ) -> Result<crate::models::github::Project> {
+        // Try to detect repository from GitHub Actions environment or git remote
+        let detected_repository = Self::detect_repository();
+
+        // Determine project title from tag and config
+        let title = if let Some(mapping) = config.get_project_mapping(tag) {
+            format!(
+                "TaskMaster - {} ({})",
+                mapping
+                    .repository
+                    .as_ref()
+                    .map(|r| r.split('/').last().unwrap_or(tag))
+                    .unwrap_or(tag),
+                tag
+            )
+        } else if let Some(ref repo) = detected_repository {
+            format!(
+                "TaskMaster - {} ({})",
+                repo.split('/').last().unwrap_or(tag),
+                tag
+            )
+        } else {
+            format!("TaskMaster Project - {}", tag)
+        };
+
+        // Use repository from config or detected
+        let repository = config
+            .get_project_mapping(tag)
+            .and_then(|m| m.repository.as_ref())
+            .map(|s| s.as_str())
+            .or(detected_repository.as_deref());
+
+        // Clone repository for later use
+        let repository_clone = repository.map(|s| s.to_string());
+
+        let created_project = github
+            .create_project(
+                &title,
+                Some("Auto-created by taskmaster-sync GitHub Action"),
+                repository,
+            )
+            .await?;
+
+        tracing::info!(
+            "Created project '{}' with number #{}",
+            created_project.title,
+            created_project.number
+        );
+        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+            println!(
+                "🎉 Created new GitHub Project: {} (#{}) ",
+                created_project.title, created_project.number
+            );
+        }
+        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+            println!("   URL: {}", created_project.url);
+        }
+
+        // Set up required fields
+        Self::setup_project_fields(github, &created_project.id).await?;
+
+        // Update config with the new project number and repository
+        let needs_new_mapping = config.get_project_mapping(tag).is_none();
+
+        if needs_new_mapping {
+            // Create new mapping if it doesn't exist
+            let new_mapping = crate::models::config::ProjectMapping {
+                project_number: created_project.number,
+                project_id: created_project.id.clone(),
+                repository: repository_clone.clone(),
+                subtask_mode: crate::models::config::SubtaskMode::Nested,
+                field_mappings: None,
+            };
+            config.add_project_mapping(tag.to_string(), new_mapping);
+        } else {
+            // Update existing mapping
+            if let Some(mapping) = config.get_project_mapping_mut(tag) {
+                mapping.project_number = created_project.number;
+                mapping.project_id = created_project.id.clone();
+                // Save repository if it was detected and not already set
+                if mapping.repository.is_none() && repository_clone.is_some() {
+                    mapping.repository = repository_clone.clone();
+                }
+            }
+        }
+        config.save().await?;
+        if std::env::var("TASKMASTER_QUIET").unwrap_or_default() != "1" {
+            println!(
+                "   ✅ Updated config with project number: {}",
+                created_project.number
+            );
+        }
+
+        Ok(created_project)
     }
 
     /// Sets up required fields for a newly created project
